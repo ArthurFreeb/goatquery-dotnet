@@ -12,6 +12,7 @@ public enum TokenType
     DATETIME,
     DATE,
     NULL,
+    BOOLEAN,
     LPAREN,
     RPAREN,
 }
@@ -30,6 +31,8 @@ public static class Keywords
     internal const string And = "and";
     internal const string Or = "or";
     internal const string Null = "null";
+    internal const string True = "true";
+    internal const string False = "false";
 }
 
 public sealed class Token

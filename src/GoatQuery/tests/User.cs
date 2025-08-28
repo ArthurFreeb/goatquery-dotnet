@@ -9,6 +9,7 @@ public record User
     public double? BalanceDouble { get; set; }
     public float? BalanceFloat { get; set; }
     public DateTime? DateOfBirth { get; set; }
+    public bool IsEmailVerified { get; set; }
 }
 
 public sealed record CustomJsonPropertyUser : User

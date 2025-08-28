@@ -140,7 +140,7 @@ public sealed class QueryParser
 
         var statement = new InfixExpression(_currentToken, identifier, _currentToken.Literal);
 
-        if (!PeekTokenIn(TokenType.STRING, TokenType.INT, TokenType.GUID, TokenType.DATETIME, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATE, TokenType.NULL))
+        if (!PeekTokenIn(TokenType.STRING, TokenType.INT, TokenType.GUID, TokenType.DATETIME, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATE, TokenType.NULL, TokenType.BOOLEAN))
         {
             return Result.Fail("Invalid value type within filter");
         }
@@ -159,7 +159,7 @@ public sealed class QueryParser
 
         if (statement.Operator.In(Keywords.Lt, Keywords.Lte, Keywords.Gt, Keywords.Gte) && !CurrentTokenIn(TokenType.INT, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATETIME, TokenType.DATE))
         {
-            return Result.Fail($"Value must be an integer when using '{statement.Operator}' operand");
+            return Result.Fail($"Value must be a numeric or date type when using '{statement.Operator}' operand");
         }
 
         switch (_currentToken.Type)
@@ -217,6 +217,12 @@ public sealed class QueryParser
                 break;
             case TokenType.NULL:
                 statement.Right = new NullLiteral(_currentToken);
+                break;
+            case TokenType.BOOLEAN:
+                if (bool.TryParse(_currentToken.Literal, out var boolValue))
+                {
+                    statement.Right = new BooleanLiteral(_currentToken, boolValue);
+                }
                 break;
         }
 

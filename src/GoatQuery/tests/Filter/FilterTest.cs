@@ -4,13 +4,13 @@ public sealed class FilterTest
 {
     private static readonly Dictionary<string, User> _users = new Dictionary<string, User>
     {
-        ["John"] = new User { Age = 2, Firstname = "John", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2004-01-31 23:59:59"), BalanceDecimal = 1.50m },
-        ["Jane"] = new User { Age = 1, Firstname = "Jane", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2020-05-09 15:30:00"), BalanceDecimal = 0 },
-        ["Apple"] = new User { Age = 2, Firstname = "Apple", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("1980-12-31 00:00:01"), BalanceFloat = 1204050.98f },
-        ["Harry"] = new User { Age = 1, Firstname = "Harry", UserId = Guid.Parse("e4c7772b-8947-4e46-98ed-644b417d2a08"), DateOfBirth = DateTime.Parse("2002-08-01"), BalanceDecimal = 0.5372958205929493m },
-        ["Doe"] = new User { Age = 3, Firstname = "Doe", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2023-07-26 12:00:30"), BalanceDecimal = null },
-        ["Egg"] = new User { Age = 3, Firstname = "Egg", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2000-01-01 00:00:00"), BalanceDouble = 1334534453453433.33435443343231235652d },
-        ["NullUser"] = new User { Age = 4, Firstname = "NullUser", UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"), DateOfBirth = null, BalanceDecimal = null, BalanceDouble = null, BalanceFloat = null },
+        ["John"] = new User { Age = 2, Firstname = "John", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2004-01-31 23:59:59"), BalanceDecimal = 1.50m, IsEmailVerified = true },
+        ["Jane"] = new User { Age = 1, Firstname = "Jane", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2020-05-09 15:30:00"), BalanceDecimal = 0, IsEmailVerified = false },
+        ["Apple"] = new User { Age = 2, Firstname = "Apple", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("1980-12-31 00:00:01"), BalanceFloat = 1204050.98f, IsEmailVerified = true },
+        ["Harry"] = new User { Age = 1, Firstname = "Harry", UserId = Guid.Parse("e4c7772b-8947-4e46-98ed-644b417d2a08"), DateOfBirth = DateTime.Parse("2002-08-01"), BalanceDecimal = 0.5372958205929493m, IsEmailVerified = false },
+        ["Doe"] = new User { Age = 3, Firstname = "Doe", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2023-07-26 12:00:30"), BalanceDecimal = null, IsEmailVerified = true },
+        ["Egg"] = new User { Age = 3, Firstname = "Egg", UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"), DateOfBirth = DateTime.Parse("2000-01-01 00:00:00"), BalanceDouble = 1334534453453433.33435443343231235652d, IsEmailVerified = false },
+        ["NullUser"] = new User { Age = 4, Firstname = "NullUser", UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"), DateOfBirth = null, BalanceDecimal = null, BalanceDouble = null, BalanceFloat = null, IsEmailVerified = true },
     };
 
     public static IEnumerable<object[]> Parameters()
@@ -263,6 +263,36 @@ public sealed class FilterTest
         yield return new object[] {
             "firstname eq 'Doe' and balanceDecimal eq null",
             new[] { _users["Doe"] }
+        };
+
+        yield return new object[] {
+            "isEmailVerified eq true",
+            new[] { _users["John"], _users["Apple"], _users["Doe"], _users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "isEmailVerified eq false",
+            new[] { _users["Jane"], _users["Harry"], _users["Egg"] }
+        };
+
+        yield return new object[] {
+            "isEmailVerified ne true",
+            new[] { _users["Jane"], _users["Harry"], _users["Egg"] }
+        };
+
+        yield return new object[] {
+            "isEmailVerified ne false",
+            new[] { _users["John"], _users["Apple"], _users["Doe"], _users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "age gt 2 and isEmailVerified eq true",
+            new[] { _users["Doe"], _users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "isEmailVerified eq false or age eq 2",
+            new[] { _users["John"], _users["Jane"], _users["Apple"], _users["Harry"], _users["Egg"] }
         };
     }
 

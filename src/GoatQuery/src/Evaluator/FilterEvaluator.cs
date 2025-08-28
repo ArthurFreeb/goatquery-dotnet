@@ -65,6 +65,9 @@ public static class FilterEvaluator
                         case NullLiteral _:
                             value = Expression.Constant(null, property.Type);
                             break;
+                        case BooleanLiteral literal:
+                            value = Expression.Constant(literal.Value, property.Type);
+                            break;
                         default:
                             return Result.Fail($"Unsupported literal type: {exp.Right.GetType().Name}");
                     }

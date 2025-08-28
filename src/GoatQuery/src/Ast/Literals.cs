@@ -86,3 +86,13 @@ public sealed class NullLiteral : QueryExpression
     {
     }
 }
+
+public sealed class BooleanLiteral : QueryExpression
+{
+    public bool Value { get; set; }
+
+    public BooleanLiteral(Token token, bool value) : base(token)
+    {
+        Value = value;
+    }
+}
