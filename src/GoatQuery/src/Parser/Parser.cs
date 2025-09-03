@@ -129,7 +129,33 @@ public sealed class QueryParser
 
     private Result<InfixExpression> ParseFilterStatement()
     {
-        var identifier = new Identifier(_currentToken, _currentToken.Literal);
+        QueryExpression leftExpression;
+
+        if (_peekToken.Type == TokenType.SLASH)
+        {
+            // We are filtering by a property on an object
+            var segments = new List<string> { _currentToken.Literal };
+            var startToken = _currentToken;
+
+            while (_peekToken.Type == TokenType.SLASH)
+            {
+                NextToken(); // consume current identifier
+                NextToken(); // consume slash
+
+                if (_currentToken.Type != TokenType.IDENT)
+                {
+                    return Result.Fail("Expected identifier after '/' in property path");
+                }
+
+                segments.Add(_currentToken.Literal);
+            }
+
+            leftExpression = new PropertyPath(startToken, segments);
+        }
+        else
+        {
+            leftExpression = new Identifier(_currentToken, _currentToken.Literal);
+        }
 
         if (!PeekIdentifierIn(Keywords.Eq, Keywords.Ne, Keywords.Contains, Keywords.Lt, Keywords.Lte, Keywords.Gt, Keywords.Gte))
         {
@@ -138,7 +164,7 @@ public sealed class QueryParser
 
         NextToken();
 
-        var statement = new InfixExpression(_currentToken, identifier, _currentToken.Literal);
+        var statement = new InfixExpression(_currentToken, leftExpression, _currentToken.Literal);
 
         if (!PeekTokenIn(TokenType.STRING, TokenType.INT, TokenType.GUID, TokenType.DATETIME, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATE, TokenType.NULL, TokenType.BOOLEAN))
         {

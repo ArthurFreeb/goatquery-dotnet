@@ -15,6 +15,7 @@ public enum TokenType
     BOOLEAN,
     LPAREN,
     RPAREN,
+    SLASH
 }
 
 public static class Keywords

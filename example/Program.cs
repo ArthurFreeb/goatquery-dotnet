@@ -50,7 +50,8 @@ using (var scope = app.Services.CreateScope())
 
                 u.DateOfBirthUtc = date;
                 u.DateOfBirthTz = TimeZoneInfo.ConvertTimeFromUtc(date, timeZone);
-            });
+            })
+            .RuleFor(x => x.Manager, (f, u) => f.CreateManager(3));
 
         context.Users.AddRange(users.Generate(1_000));
         context.SaveChanges();
@@ -58,6 +59,8 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Seeded 1,000 fake users!");
     }
 }
+
+Console.WriteLine($"Postgres connection string: {postgreSqlContainer.GetConnectionString()}");
 
 app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper mapper, [AsParameters] Query query) =>
 {
@@ -79,3 +82,27 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper ma
 app.MapControllers();
 
 app.Run();
+
+public static class FakerExtensions
+{
+    public static User? CreateManager(this Faker f, int depth)
+    {
+        if (depth <= 0 || !f.Random.Bool(0.6f)) // 60% chance of having manager, stop at depth 0
+            return null;
+
+        return new User
+        {
+            Id = f.Random.Guid(),
+            Firstname = f.Person.FirstName,
+            Lastname = f.Person.LastName,
+            Age = f.Random.Int(0, 100),
+            IsDeleted = f.Random.Bool(),
+            Test = f.Random.Double(),
+            NullableInt = f.Random.Bool() ? f.Random.Int(1, 100) : null,
+            IsEmailVerified = f.Random.Bool(),
+            DateOfBirthUtc = f.Date.Past().ToUniversalTime(),
+            DateOfBirthTz = TimeZoneInfo.ConvertTimeFromUtc(f.Date.Past().ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById("America/New_York")),
+            Manager = f.CreateManager(depth - 1) // Recursive call with reduced depth
+        };
+    }
+}

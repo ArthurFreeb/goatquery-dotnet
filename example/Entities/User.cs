@@ -16,4 +16,5 @@ public record User
 
     [Column(TypeName = "timestamp without time zone")]
     public DateTime DateOfBirthTz { get; set; }
+    public User? Manager { get; set; }
 }

@@ -437,6 +437,34 @@ public sealed class FilterLexerTest
                 new (TokenType.NULL, "null"),
             }
         };
+
+        yield return new object[]
+        {
+            "manager/firstName eq 'John'",
+            new KeyValuePair<TokenType, string>[]
+            {
+                new (TokenType.IDENT, "manager"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "firstName"),
+                new (TokenType.IDENT, "eq"),
+                new (TokenType.STRING, "John"),
+            }
+        };
+
+        yield return new object[]
+        {
+            "manager/manager/firstName eq 'John'",
+            new KeyValuePair<TokenType, string>[]
+            {
+                new (TokenType.IDENT, "manager"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "manager"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "firstName"),
+                new (TokenType.IDENT, "eq"),
+                new (TokenType.STRING, "John"),
+            }
+        };
     }
 
     [Theory]

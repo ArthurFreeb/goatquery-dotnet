@@ -48,6 +48,9 @@ public sealed class QueryLexer
             case ')':
                 token = new Token(TokenType.RPAREN, _character);
                 break;
+            case '/':
+                token = new Token(TokenType.SLASH, _character);
+                break;
             case '\'':
                 token.Type = TokenType.STRING;
                 token.Literal = ReadString();

@@ -13,4 +13,5 @@ public record UserDto
     public int? NullableInt { get; set; }
     public DateTime DateOfBirthUtc { get; set; }
     public DateTime DateOfBirthTz { get; set; }
+    public User? Manager { get; set; }
 }

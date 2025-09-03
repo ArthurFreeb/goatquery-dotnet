@@ -7,7 +7,7 @@ public abstract class Node
         _token = token;
     }
 
-    public string TokenLiteral()
+    public virtual string TokenLiteral()
     {
         return _token.Literal;
     }

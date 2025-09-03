@@ -164,4 +164,25 @@ public sealed class FilterParserTest
         Assert.Equal("eq", right.Operator);
         Assert.Equal("10", right.Right.TokenLiteral());
     }
+
+    [Theory]
+    [InlineData("manager/firstName eq 'John'", new string[] { "manager", "firstName" }, "eq", "John")]
+    [InlineData("manager/manager/firstName eq 'John'", new string[] { "manager", "manager", "firstName" }, "eq", "John")]
+    public void Test_ParsingFilterStatementWithNestedProperty(string input, string[] expectedLeft, string expectedOperator, string expectedRight)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var program = parser.ParseFilter();
+
+        var expression = program.Value.Expression;
+        Assert.NotNull(expression);
+
+        var left = expression.Left as PropertyPath;
+        Assert.NotNull(left);
+
+        Assert.Equal(expectedLeft, left.Segments);
+        Assert.Equal(expectedOperator, expression.Operator);
+        Assert.Equal(expectedRight, expression.Right.TokenLiteral());
+    }
 }
