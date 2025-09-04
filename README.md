@@ -1,6 +1,6 @@
 # GoatQuery
 
-A .NET library for parsing OData-style query parameters into LINQ expressions. Enables database-level filtering, sorting, and pagination from HTTP query strings.
+A .NET library for parsing query parameters into LINQ expressions. Enables database-level filtering, sorting, and pagination from HTTP query strings.
 
 ## Installation
 
@@ -27,7 +27,7 @@ public IActionResult GetUsers() => Ok(dbContext.Users);
 
 ```
 GET /api/users?$filter=age gt 18 and isActive eq true
-GET /api/users?$orderby=lastName asc, firstName desc  
+GET /api/users?$orderby=lastName asc, firstName desc
 GET /api/users?$top=10&$skip=20&$count=true
 GET /api/users?$search=john
 ```
@@ -35,11 +35,13 @@ GET /api/users?$search=john
 ## Filtering
 
 ### Operators
+
 - **Comparison**: `eq`, `ne`, `gt`, `ge`, `lt`, `le`
 - **Logical**: `and`, `or`
 - **String**: `contains`
 
 ### Data Types
+
 - String: `'value'`
 - Numbers: `42`, `3.14f`, `2.5m`, `1.0d`
 - Boolean: `true`, `false`
@@ -48,6 +50,7 @@ GET /api/users?$search=john
 - Null: `null`
 
 ### Examples
+
 ```csharp
 "age gt 18"
 "firstName eq 'John' and isActive ne false"
@@ -64,7 +67,7 @@ public class UserDto
 {
     [JsonPropertyName("first_name")]
     public string FirstName { get; set; }
-    
+
     public int Age { get; set; }  // Maps to "age"
 }
 ```
@@ -79,7 +82,7 @@ Implement custom search logic:
 public class UserSearchBinder : ISearchBinder<User>
 {
     public Expression<Func<User, bool>> Bind(string searchTerm) =>
-        user => user.FirstName.Contains(searchTerm) || 
+        user => user.FirstName.Contains(searchTerm) ||
                 user.LastName.Contains(searchTerm);
 }
 
@@ -89,6 +92,7 @@ var result = users.Apply(query, new UserSearchBinder());
 ## ASP.NET Core Integration
 
 ### Action Filter
+
 ```csharp
 [HttpGet]
 [EnableQuery<UserDto>(maxTop: 100)]
@@ -96,6 +100,7 @@ public IActionResult GetUsers() => Ok(dbContext.Users);
 ```
 
 ### Manual Processing
+
 ```csharp
 [HttpGet]
 public IActionResult GetUsers([FromQuery] Query query)
