@@ -1,6 +1,7 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("controller/[controller]")]
@@ -22,6 +23,8 @@ public class UsersController : ControllerBase
     public ActionResult<IEnumerable<UserDto>> Get()
     {
         var users = _db.Users
+            .Include(x => x.Manager)
+                .ThenInclude(x => x.Manager)
             .Where(x => !x.IsDeleted)
             .ProjectTo<UserDto>(_mapper.ConfigurationProvider);
 

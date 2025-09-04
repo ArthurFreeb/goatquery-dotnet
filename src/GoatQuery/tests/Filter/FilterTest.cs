@@ -16,7 +16,7 @@ public sealed class FilterTest
 
         yield return new object[] {
             "Age eq 1",
-            new[] { TestData.Users["Jane"], TestData.Users["Harry"] }
+            new[] { TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"] }
         };
 
         yield return new object[] {
@@ -30,23 +30,23 @@ public sealed class FilterTest
         };
 
         yield return new object[] {
-            "firstname eq 'John' or Age eq 3",
-            new[] { TestData.Users["John"], TestData.Users["Doe"], TestData.Users["Egg"] }
+            "firstname eq 'John' or Age eq 33",
+            new[] { TestData.Users["John"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
             "Age eq 1 and firstName eq 'Harry' or Age eq 2",
-            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"] }
+            new[] { TestData.Users["John"], TestData.Users["Harry"] }
         };
 
         yield return new object[] {
             "Age eq 1 or Age eq 2 or firstName eq 'Egg'",
-            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Egg"] }
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
-            "Age ne 3",
-            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["NullUser"] }
+            "Age ne 33",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"], TestData.Users["NullUser"] }
         };
 
         yield return new object[] {
@@ -56,36 +56,36 @@ public sealed class FilterTest
 
         yield return new object[] {
             "Age ne 1 and firstName contains 'a'",
-            new[] { TestData.Users["Apple"] }
+            new[] { TestData.Users["Jane"] }
         };
 
         yield return new object[] {
             "Age ne 1 and firstName contains 'a' or firstName eq 'Apple'",
-            new[] { TestData.Users["Apple"] }
+            new[] { TestData.Users["Jane"], TestData.Users["Apple"] }
         };
 
         yield return new object[] {
-            "Firstname eq 'John' and Age eq 2 or Age eq 3",
-            new[] { TestData.Users["John"], TestData.Users["Doe"], TestData.Users["Egg"] }
+            "Firstname eq 'John' and Age eq 2 or Age eq 33",
+            new[] { TestData.Users["John"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
-            "(Firstname eq 'John' and Age eq 2) or Age eq 3",
-            new[] { TestData.Users["John"], TestData.Users["Doe"], TestData.Users["Egg"] }
+            "(Firstname eq 'John' and Age eq 2) or Age eq 33",
+            new[] { TestData.Users["John"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
-            "Firstname eq 'John' and (Age eq 2 or Age eq 3)",
+            "Firstname eq 'John' and (Age eq 2 or Age eq 33)",
             new[] { TestData.Users["John"] }
         };
 
         yield return new object[] {
-            "(Firstname eq 'John' and Age eq 2 or Age eq 3)",
-            new[] { TestData.Users["John"], TestData.Users["Doe"], TestData.Users["Egg"] }
+            "(Firstname eq 'John' and Age eq 2 or Age eq 33)",
+            new[] { TestData.Users["John"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
-            "(Firstname eq 'John') or (Age eq 3 and Firstname eq 'Egg') or Age eq 1 and (Age eq 2)",
+            "(Firstname eq 'John') or (Age eq 33 and Firstname eq 'Egg') or Age eq 1 and (Age eq 2)",
             new[] { TestData.Users["John"], TestData.Users["Egg"] }
         };
 
@@ -96,7 +96,7 @@ public sealed class FilterTest
 
         yield return new object[] {
             "age lt 3",
-            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"] }
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"] }
         };
 
         yield return new object[] {
@@ -106,22 +106,22 @@ public sealed class FilterTest
 
         yield return new object[] {
             "age lte 2",
-            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"] }
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"] }
         };
 
         yield return new object[] {
             "age gt 1",
-            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"], TestData.Users["NullUser"] }
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Egg"], TestData.Users["NullUser"] }
         };
 
         yield return new object[] {
             "age gte 3",
-            new[] { TestData.Users["Doe"], TestData.Users["Egg"], TestData.Users["NullUser"] }
+            new[] { TestData.Users["Jane"], TestData.Users["Egg"], TestData.Users["NullUser"] }
         };
 
         yield return new object[] {
             "age lt 3 and age gt 1",
-            new[] { TestData.Users["John"], TestData.Users["Apple"] }
+            new[] { TestData.Users["John"] }
         };
 
         yield return new object[] {
@@ -241,7 +241,7 @@ public sealed class FilterTest
 
         yield return new object[] {
             "balanceDecimal eq null and age gt 3",
-            new[] { TestData.Users["NullUser"] }
+            new[] { TestData.Users["Egg"], TestData.Users["NullUser"] }
         };
 
         yield return new object[] {
@@ -276,12 +276,12 @@ public sealed class FilterTest
 
         yield return new object[] {
             "age gt 2 and isEmailVerified eq true",
-            new[] { TestData.Users["Doe"], TestData.Users["NullUser"] }
+            new[] { TestData.Users["NullUser"] }
         };
 
         yield return new object[] {
             "isEmailVerified eq false or age eq 2",
-            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Egg"] }
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Harry"], TestData.Users["Egg"] }
         };
 
         yield return new object[] {
@@ -355,8 +355,8 @@ public sealed class FilterTest
         };
 
         yield return new object[] {
-            "(age eq 2 and manager/isEmailVerified eq true) or (age eq 3 and manager/manager ne null)",
-            new[] { TestData.Users["Apple"], TestData.Users["Egg"] }
+            "(age eq 2 and manager/isEmailVerified eq true) or (age eq 33 and manager/manager ne null)",
+            new[] { TestData.Users["Egg"] }
         };
 
         yield return new object[] {

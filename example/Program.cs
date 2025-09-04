@@ -65,6 +65,8 @@ Console.WriteLine($"Postgres connection string: {postgreSqlContainer.GetConnecti
 app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper mapper, [AsParameters] Query query) =>
 {
     var result = db.Users
+        .Include(x => x.Manager)
+            .ThenInclude(x => x.Manager)
         .Where(x => !x.IsDeleted)
         .ProjectTo<UserDto>(mapper.ConfigurationProvider)
         .Apply(query);
