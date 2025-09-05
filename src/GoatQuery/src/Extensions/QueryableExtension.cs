@@ -8,26 +8,6 @@ using FluentResults;
 
 public static class QueryableExtension
 {
-    private static Dictionary<string, string> CreatePropertyMapping<T>()
-    {
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        var properties = typeof(T).GetProperties();
-
-        foreach (var property in properties)
-        {
-            var jsonPropertyNameAttribute = property.GetCustomAttribute<JsonPropertyNameAttribute>();
-            if (jsonPropertyNameAttribute != null)
-            {
-                result[jsonPropertyNameAttribute.Name] = property.Name;
-                continue;
-            }
-
-            result[property.Name] = property.Name;
-        }
-
-        return result;
-    }
 
     public static Result<QueryResult<T>> Apply<T>(this IQueryable<T> queryable, Query query, ISearchBinder<T> searchBinder = null, QueryOptions options = null)
     {
@@ -38,7 +18,7 @@ public static class QueryableExtension
 
         var type = typeof(T);
 
-        var propertyMappings = CreatePropertyMapping<T>();
+        var propertyMappings = PropertyMappingHelper.CreatePropertyMapping<T>();
 
         // Filter
         if (!string.IsNullOrEmpty(query.Filter))

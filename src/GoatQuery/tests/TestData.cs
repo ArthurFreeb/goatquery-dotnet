@@ -10,6 +10,19 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2004-01-31 23:59:59"),
             BalanceDecimal = 1.50m,
             IsEmailVerified = true,
+            Addresses = new[]
+            {
+                new Address
+                {
+                    AddressLine1 = "123 Main St",
+                    City = new City { Name = "New York", Country = "USA" }
+                },
+                new Address
+                {
+                    AddressLine1 = "456 Oak Ave",
+                    City = new City { Name = "Boston", Country = "USA" }
+                }
+            },
             Manager = new User
             {
                 Age = 16,
@@ -27,7 +40,15 @@ public static class TestData
             UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"),
             DateOfBirth = DateTime.Parse("2020-05-09 15:30:00"),
             BalanceDecimal = 0,
-            IsEmailVerified = false
+            IsEmailVerified = false,
+            Addresses = new[]
+            {
+                new Address
+                {
+                    AddressLine1 = "789 Pine Rd",
+                    City = new City { Name = "Seattle", Country = "USA" }
+                }
+            }
         },
         ["Apple"] = new User
         {
@@ -37,6 +58,19 @@ public static class TestData
             DateOfBirth = DateTime.Parse("1980-12-31 00:00:01"),
             BalanceFloat = 1204050.98f,
             IsEmailVerified = true,
+            Addresses = new[]
+            {
+                new Address
+                {
+                    AddressLine1 = "321 Elm St",
+                    City = new City { Name = "Chicago", Country = "USA" }
+                },
+                new Address
+                {
+                    AddressLine1 = "654 Maple Dr",
+                    City = new City { Name = "New York", Country = "USA" }
+                }
+            },
             Manager = new User
             {
                 Age = 16,
@@ -54,7 +88,8 @@ public static class TestData
             UserId = Guid.Parse("e4c7772b-8947-4e46-98ed-644b417d2a08"),
             DateOfBirth = DateTime.Parse("2002-08-01"),
             BalanceDecimal = 0.5372958205929493m,
-            IsEmailVerified = false
+            IsEmailVerified = false,
+            Addresses = Array.Empty<Address>()
         },
         ["Doe"] = new User
         {
@@ -63,7 +98,15 @@ public static class TestData
             UserId = Guid.Parse("58cdeca3-645b-457c-87aa-7d5f87734255"),
             DateOfBirth = DateTime.Parse("2023-07-26 12:00:30"),
             BalanceDecimal = null,
-            IsEmailVerified = true
+            IsEmailVerified = true,
+            Addresses = new[]
+            {
+                new Address
+                {
+                    AddressLine1 = "999 Broadway",
+                    City = new City { Name = "Los Angeles", Country = "USA" }
+                }
+            }
         },
         ["Egg"] = new User
         {
@@ -73,6 +116,19 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2000-01-01 00:00:00"),
             BalanceDouble = 1334534453453433.33435443343231235652d,
             IsEmailVerified = false,
+            Addresses = new[]
+            {
+                new Address
+                {
+                    AddressLine1 = "777 First Ave",
+                    City = new City { Name = "Miami", Country = "USA" }
+                },
+                new Address
+                {
+                    AddressLine1 = "888 Second St",
+                    City = new City { Name = "Orlando", Country = "USA" }
+                }
+            },
             Manager = new User
             {
                 Age = 18,
@@ -110,7 +166,8 @@ public static class TestData
             BalanceDecimal = null,
             BalanceDouble = null,
             BalanceFloat = null,
-            IsEmailVerified = true
+            IsEmailVerified = true,
+            Addresses = Array.Empty<Address>()
         },
     };
 }

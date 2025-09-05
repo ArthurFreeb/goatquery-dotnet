@@ -35,6 +35,14 @@ using (var scope = app.Services.CreateScope())
     // Seed data
     if (!context.Users.Any())
     {
+        var cities = new Faker<City>()
+            .RuleFor(x => x.Name, f => f.Address.City())
+            .RuleFor(x => x.Country, f => f.Address.Country());
+
+        var addresses = new Faker<Address>()
+            .RuleFor(x => x.AddressLine1, f => f.Address.StreetAddress())
+            .RuleFor(x => x.City, f => f.PickRandom(cities.Generate(50)));
+
         var users = new Faker<User>()
             .RuleFor(x => x.Firstname, f => f.Person.FirstName)
             .RuleFor(x => x.Lastname, f => f.Person.LastName)
@@ -51,7 +59,8 @@ using (var scope = app.Services.CreateScope())
                 u.DateOfBirthUtc = date;
                 u.DateOfBirthTz = TimeZoneInfo.ConvertTimeFromUtc(date, timeZone);
             })
-            .RuleFor(x => x.Manager, (f, u) => f.CreateManager(3));
+            .RuleFor(x => x.Manager, (f, u) => f.CreateManager(3))
+            .RuleFor(x => x.Addresses, f => f.PickRandom(addresses.Generate(5), f.Random.Int(1, 3)).ToList());
 
         context.Users.AddRange(users.Generate(1_000));
         context.SaveChanges();

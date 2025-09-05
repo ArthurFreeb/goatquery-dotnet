@@ -465,6 +465,64 @@ public sealed class FilterLexerTest
                 new (TokenType.STRING, "John"),
             }
         };
+
+        yield return new object[]
+        {
+            "tags/any(t: t eq 'tag 2')",
+            new KeyValuePair<TokenType, string>[]
+            {
+                new (TokenType.IDENT, "tags"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "any"),
+                new (TokenType.LPAREN, "("),
+                new (TokenType.IDENT, "t"),
+                new (TokenType.COLON, ":"),
+                new (TokenType.IDENT, "t"),
+                new (TokenType.IDENT, "eq"),
+                new (TokenType.STRING, "tag 2"),
+                new (TokenType.RPAREN, ")"),
+            }
+        };
+
+        // Basic all() syntax
+        yield return new object[]
+        {
+            "tags/all(item: item contains 'test')",
+            new KeyValuePair<TokenType, string>[]
+            {
+                new (TokenType.IDENT, "tags"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "all"),
+                new (TokenType.LPAREN, "("),
+                new (TokenType.IDENT, "item"),
+                new (TokenType.COLON, ":"),
+                new (TokenType.IDENT, "item"),
+                new (TokenType.IDENT, "contains"),
+                new (TokenType.STRING, "test"),
+                new (TokenType.RPAREN, ")"),
+            }
+        };
+
+        // Nested object property access in lambda
+        yield return new object[]
+        {
+            "addresses/any(address: address/city eq 'New York')",
+            new KeyValuePair<TokenType, string>[]
+            {
+                new (TokenType.IDENT, "addresses"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "any"),
+                new (TokenType.LPAREN, "("),
+                new (TokenType.IDENT, "address"),
+                new (TokenType.COLON, ":"),
+                new (TokenType.IDENT, "address"),
+                new (TokenType.SLASH, "/"),
+                new (TokenType.IDENT, "city"),
+                new (TokenType.IDENT, "eq"),
+                new (TokenType.STRING, "New York"),
+                new (TokenType.RPAREN, ")"),
+            }
+        };
     }
 
     [Theory]

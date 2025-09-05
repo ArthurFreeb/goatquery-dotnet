@@ -14,4 +14,17 @@ public record UserDto
     public DateTime DateOfBirthUtc { get; set; }
     public DateTime DateOfBirthTz { get; set; }
     public User? Manager { get; set; }
+    public IEnumerable<AddressDto> Addresses { get; set; } = Array.Empty<AddressDto>();
+}
+
+public record AddressDto
+{
+    public string AddressLine1 { get; set; } = string.Empty;
+    public CityDto City { get; set; } = new CityDto();
+}
+
+public record CityDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
 }

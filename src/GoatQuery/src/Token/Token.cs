@@ -15,7 +15,8 @@ public enum TokenType
     BOOLEAN,
     LPAREN,
     RPAREN,
-    SLASH
+    SLASH,
+    COLON
 }
 
 public static class Keywords
@@ -34,6 +35,8 @@ public static class Keywords
     internal const string Null = "null";
     internal const string True = "true";
     internal const string False = "false";
+    internal const string Any = "any";
+    internal const string All = "all";
 }
 
 public sealed class Token

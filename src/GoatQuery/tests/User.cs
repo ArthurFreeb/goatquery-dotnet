@@ -11,10 +11,23 @@ public record User
     public DateTime? DateOfBirth { get; set; }
     public bool IsEmailVerified { get; set; }
     public User? Manager { get; set; }
+    public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
 }
 
 public sealed record CustomJsonPropertyUser : User
 {
     [JsonPropertyName("last_name")]
     public string Lastname { get; set; } = string.Empty;
+}
+
+public record Address
+{
+    public City City { get; set; } = new City();
+    public string AddressLine1 { get; set; } = string.Empty;
+}
+
+public record City
+{
+    public string Name { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
 }

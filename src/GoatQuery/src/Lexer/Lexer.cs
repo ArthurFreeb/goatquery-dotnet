@@ -51,70 +51,22 @@ public sealed class QueryLexer
             case '/':
                 token = new Token(TokenType.SLASH, _character);
                 break;
+            case ':':
+                token = new Token(TokenType.COLON, _character);
+                break;
             case '\'':
                 token.Type = TokenType.STRING;
                 token.Literal = ReadString();
                 break;
+            case var c when char.IsDigit(c):
+                token.Literal = ReadNumericOrDateTime();
+                token.Type = DetermineNumericTokenType(token.Literal);
+                return token;
             default:
-                if (IsLetter(_character) || IsDigit(_character))
+                if (IsLetter(_character))
                 {
                     token.Literal = ReadIdentifier();
-                    if (IsGuid(token.Literal))
-                    {
-                        token.Type = TokenType.GUID;
-                        return token;
-                    }
-
-                    if (token.Literal.Equals(Keywords.Null, StringComparison.OrdinalIgnoreCase))
-                    {
-                        token.Type = TokenType.NULL;
-                        return token;
-                    }
-
-                    if (token.Literal.Equals(Keywords.True, StringComparison.OrdinalIgnoreCase) ||
-                        token.Literal.Equals(Keywords.False, StringComparison.OrdinalIgnoreCase))
-                    {
-                        token.Type = TokenType.BOOLEAN;
-                        return token;
-                    }
-
-                    if (IsDigit(token.Literal[0]))
-                    {
-                        if (IsDate(token.Literal))
-                        {
-                            token.Type = TokenType.DATE;
-                            return token;
-                        }
-
-                        if (IsDateTime(token.Literal))
-                        {
-                            token.Type = TokenType.DATETIME;
-                            return token;
-                        }
-
-                        if (token.Literal.EndsWith("f", StringComparison.OrdinalIgnoreCase))
-                        {
-                            token.Type = TokenType.FLOAT;
-                            return token;
-                        }
-
-                        if (token.Literal.EndsWith("m", StringComparison.OrdinalIgnoreCase))
-                        {
-                            token.Type = TokenType.DECIMAL;
-                            return token;
-                        }
-
-                        if (token.Literal.EndsWith("d", StringComparison.OrdinalIgnoreCase))
-                        {
-                            token.Type = TokenType.DOUBLE;
-                            return token;
-                        }
-
-                        token.Type = TokenType.INT;
-                        return token;
-                    }
-
-                    token.Type = TokenType.IDENT;
+                    token.Type = ClassifyIdentifier(token.Literal);
                     return token;
                 }
                 break;
@@ -142,15 +94,99 @@ public sealed class QueryLexer
 
     private string ReadIdentifier()
     {
-        var currentPosition = _position;
+        var startPosition = _position;
 
-        while (IsLetter(_character) || IsDigit(_character) || _character == '-' || _character == ':' || _character == '.')
+        while (IsIdentifierCharacter())
         {
             ReadCharacter();
         }
 
-        return _input.Substring(currentPosition, _position - currentPosition);
+        return _input.Substring(startPosition, _position - startPosition);
     }
+
+    private bool IsIdentifierCharacter()
+    {
+        return IsLetter(_character) || IsDigit(_character) || 
+               _character == '-' || _character == '.';
+    }
+
+    private string ReadNumericOrDateTime()
+    {
+        var startPosition = _position;
+        
+        // Read digits, and datetime/numeric characters (colons, dashes, dots, etc.)
+        while (_character != char.MinValue && IsNumericOrDateTimeCharacter())
+        {
+            ReadCharacter();
+        }
+        
+        return _input.Substring(startPosition, _position - startPosition);
+    }
+
+    private bool IsNumericOrDateTimeCharacter()
+    {
+        return IsDigit(_character) || 
+               _character == '-' || 
+               _character == ':' || 
+               _character == '.' || 
+               _character == 'T' ||  // DateTime separator
+               _character == 'Z' ||  // UTC indicator
+               _character == '+' ||  // Timezone offset
+               _character == 'f' || _character == 'F' ||  // Float suffix
+               _character == 'm' || _character == 'M' ||  // Decimal suffix  
+               _character == 'd' || _character == 'D' ||  // Double suffix
+               _character == 'l' || _character == 'L' ||  // Long suffix
+               ('a' <= _character && _character <= 'f') ||  // GUID hex chars
+               ('A' <= _character && _character <= 'F');   // GUID hex chars (uppercase)
+    }
+
+    private TokenType ClassifyIdentifier(string literal)
+    {
+        if (IsGuid(literal))
+            return TokenType.GUID;
+
+        if (literal.Equals(Keywords.Null, StringComparison.OrdinalIgnoreCase))
+            return TokenType.NULL;
+
+        if (literal.Equals(Keywords.True, StringComparison.OrdinalIgnoreCase) ||
+            literal.Equals(Keywords.False, StringComparison.OrdinalIgnoreCase))
+            return TokenType.BOOLEAN;
+
+        return TokenType.IDENT;
+    }
+
+    private TokenType DetermineNumericTokenType(string literal)
+    {
+        // Check for GUID first (may contain numbers and dashes)
+        if (IsGuid(literal))
+            return TokenType.GUID;
+
+        // Check for date patterns before datetime (more specific first)
+        if (IsDate(literal))
+            return TokenType.DATE;
+            
+        // Check for datetime patterns (since they contain colons)
+        if (IsDateTime(literal))
+            return TokenType.DATETIME;
+
+        // Check numeric suffixes
+        if (literal.EndsWith("f", StringComparison.OrdinalIgnoreCase))
+            return TokenType.FLOAT;
+            
+        if (literal.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+            return TokenType.DECIMAL;
+            
+        if (literal.EndsWith("d", StringComparison.OrdinalIgnoreCase))
+            return TokenType.DOUBLE;
+            
+        if (literal.EndsWith("l", StringComparison.OrdinalIgnoreCase))
+            return TokenType.INT; // Our existing INT type for simplicity
+        
+        // Default to integer
+        return TokenType.INT;
+    }
+    
+
 
     private bool IsLetter(char ch)
     {

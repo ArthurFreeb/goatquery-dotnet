@@ -129,11 +129,11 @@ public sealed class QueryParser
 
     private Result<InfixExpression> ParseFilterStatement()
     {
-        QueryExpression leftExpression;
+        QueryExpression leftExpression = null;
 
         if (_peekToken.Type == TokenType.SLASH)
         {
-            // We are filtering by a property on an object
+            // We are filtering by a property on an object or lambda expression
             var segments = new List<string> { _currentToken.Literal };
             var startToken = _currentToken;
 
@@ -147,14 +147,38 @@ public sealed class QueryParser
                     return Result.Fail("Expected identifier after '/' in property path");
                 }
 
+                // Check if this is a lambda function (any/all followed by parenthesis)
+                if ((_currentToken.Literal.Equals(Keywords.Any, StringComparison.OrdinalIgnoreCase) ||
+                     _currentToken.Literal.Equals(Keywords.All, StringComparison.OrdinalIgnoreCase)) &&
+                    _peekToken.Type == TokenType.LPAREN)
+                {
+                    var lambdaResult = ParseLambdaExpression(new PropertyPath(startToken, segments), _currentToken.Literal);
+                    if (lambdaResult.IsFailed)
+                    {
+                        return Result.Fail(lambdaResult.Errors);
+                    }
+                    leftExpression = lambdaResult.Value;
+                    break;
+                }
+
                 segments.Add(_currentToken.Literal);
             }
 
-            leftExpression = new PropertyPath(startToken, segments);
+            // If we didn't parse a lambda, create a regular property path
+            if (leftExpression == null)
+            {
+                leftExpression = new PropertyPath(startToken, segments);
+            }
         }
         else
         {
             leftExpression = new Identifier(_currentToken, _currentToken.Literal);
+        }
+
+        // Lambda expressions don't need an operator after them - they are complete expressions
+        if (leftExpression is QueryLambdaExpression)
+        {
+            return new InfixExpression(_currentToken, leftExpression, string.Empty);
         }
 
         if (!PeekIdentifierIn(Keywords.Eq, Keywords.Ne, Keywords.Contains, Keywords.Lt, Keywords.Lte, Keywords.Gt, Keywords.Gte))
@@ -253,6 +277,59 @@ public sealed class QueryParser
         }
 
         return statement;
+    }
+
+    private Result<QueryLambdaExpression> ParseLambdaExpression(QueryExpression property, string function)
+    {
+        var startToken = _currentToken;
+        
+        // Consume opening parenthesis
+        if (!PeekTokenIs(TokenType.LPAREN))
+        {
+            return Result.Fail("Expected '(' after lambda function");
+        }
+        NextToken(); // consume function name (any/all)
+        NextToken(); // consume '('
+
+        // Parse parameter name
+        if (!CurrentTokenIs(TokenType.IDENT))
+        {
+            return Result.Fail("Expected parameter name in lambda expression");
+        }
+        var parameter = _currentToken.Literal;
+        NextToken();
+
+        // Parse colon
+        if (!CurrentTokenIs(TokenType.COLON))
+        {
+            return Result.Fail("Expected ':' after lambda parameter");
+        }
+        NextToken();
+
+        // Parse lambda body (recursive expression parsing)
+        var bodyResult = ParseExpression();
+        if (bodyResult.IsFailed)
+        {
+            return Result.Fail(bodyResult.Errors);
+        }
+
+        // Expect closing parenthesis
+        if (!CurrentTokenIs(TokenType.RPAREN))
+        {
+            return Result.Fail("Expected ')' to close lambda expression");
+        }
+
+        var lambda = new QueryLambdaExpression(startToken, property, function, parameter)
+        {
+            Body = bodyResult.Value
+        };
+
+        return lambda;
+    }
+
+    private bool PeekTokenIs(TokenType tokenType)
+    {
+        return _peekToken.Type == tokenType;
     }
 
     private int GetPrecedence(TokenType tokenType)

@@ -185,4 +185,151 @@ public sealed class FilterParserTest
         Assert.Equal(expectedOperator, expression.Operator);
         Assert.Equal(expectedRight, expression.Right.TokenLiteral());
     }
+
+    [Theory]
+    [InlineData("tags/any(t: t eq 'tag 2')", "tags", "any", "t", "t", "eq", "tag 2")]
+    [InlineData("tags/all(item: item contains 'test')", "tags", "all", "item", "item", "contains", "test")]
+    [InlineData("categories/any(c: c eq 'electronics')", "categories", "any", "c", "c", "eq", "electronics")]
+    [InlineData("items/all(i: i ne null)", "items", "all", "i", "i", "ne", "null")]
+    public void Test_ParsingQueryLambdaExpression(string input, string expectedProperty, string expectedFunction, 
+        string expectedParameter, string expectedLambdaLeft, string expectedLambdaOperator, string expectedLambdaRight)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var program = parser.ParseFilter();
+
+        Assert.True(program.IsSuccess);
+        var expression = program.Value.Expression;
+        Assert.NotNull(expression);
+
+        // Lambda expressions are wrapped in InfixExpression with empty operator
+        var lambda = expression.Left as QueryLambdaExpression;
+        Assert.NotNull(lambda);
+        Assert.Equal(string.Empty, expression.Operator);
+
+        // Verify lambda structure
+        Assert.Equal(expectedProperty, lambda.Property.TokenLiteral());
+        Assert.Equal(expectedFunction, lambda.Function);
+        Assert.Equal(expectedParameter, lambda.Parameter);
+
+        // Verify lambda body (inner expression)
+        var bodyExpression = lambda.Body as InfixExpression;
+        Assert.NotNull(bodyExpression);
+        Assert.Equal(expectedLambdaLeft, bodyExpression.Left.TokenLiteral());
+        Assert.Equal(expectedLambdaOperator, bodyExpression.Operator);
+        Assert.Equal(expectedLambdaRight, bodyExpression.Right.TokenLiteral());
+    }
+
+    [Theory]
+    [InlineData("addresses/any(address: address/city eq 'New York')", "addresses", "any", "address", new string[] { "address", "city" }, "eq", "New York")]
+    [InlineData("orders/all(order: order/status eq 'completed')", "orders", "all", "order", new string[] { "order", "status" }, "eq", "completed")]
+    public void Test_ParsingQueryLambdaExpressionWithNestedProperty(string input, string expectedProperty, string expectedFunction,
+        string expectedParameter, string[] expectedNestedProperty, string expectedOperator, string expectedValue)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var program = parser.ParseFilter();
+
+        Assert.True(program.IsSuccess);
+        var expression = program.Value.Expression;
+        Assert.NotNull(expression);
+
+        // Lambda expressions are wrapped in InfixExpression with empty operator
+        var lambda = expression.Left as QueryLambdaExpression;
+        Assert.NotNull(lambda);
+        Assert.Equal(string.Empty, expression.Operator);
+
+        // Verify lambda structure
+        Assert.Equal(expectedProperty, lambda.Property.TokenLiteral());
+        Assert.Equal(expectedFunction, lambda.Function);
+        Assert.Equal(expectedParameter, lambda.Parameter);
+
+        // Verify lambda body contains nested property access
+        var bodyExpression = lambda.Body as InfixExpression;
+        Assert.NotNull(bodyExpression);
+        
+        var propertyPath = bodyExpression.Left as PropertyPath;
+        Assert.NotNull(propertyPath);
+        Assert.Equal(expectedNestedProperty, propertyPath.Segments);
+        Assert.Equal(expectedOperator, bodyExpression.Operator);
+        Assert.Equal(expectedValue, bodyExpression.Right.TokenLiteral());
+    }
+
+    [Theory]
+    [InlineData("name eq 'John' and tags/any(t: t eq 'important')", "and")]
+    [InlineData("age gt 18 or categories/all(c: c ne null)", "or")]
+    [InlineData("tags/any(t: t contains 'work') and status eq 'active'", "and")]
+    public void Test_ParsingQueryLambdaExpressionWithLogicalOperators(string input, string expectedLogicalOperator)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var program = parser.ParseFilter();
+
+        Assert.True(program.IsSuccess);
+        var expression = program.Value.Expression;
+        Assert.NotNull(expression);
+
+        // Verify the logical operator between expressions
+        Assert.Equal(expectedLogicalOperator, expression.Operator);
+
+        // One side should be a regular expression, the other should contain a lambda
+        // The exact structure depends on precedence, but we can verify both sides exist
+        Assert.NotNull(expression.Left);
+        Assert.NotNull(expression.Right);
+    }
+
+    [Theory]
+    [InlineData("tags/any(t: t eq 'tag1' and t ne 'tag2')", "tags", "any", "t")]
+    [InlineData("items/all(i: i/price gt 100 or i/discount lt 0.1)", "items", "all", "i")]
+    public void Test_ParsingComplexQueryLambdaExpression(string input, string expectedProperty, string expectedFunction, string expectedParameter)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var program = parser.ParseFilter();
+
+        Assert.True(program.IsSuccess);
+        var expression = program.Value.Expression;
+        Assert.NotNull(expression);
+
+        // Lambda expressions are wrapped in InfixExpression with empty operator
+        var lambda = expression.Left as QueryLambdaExpression;
+        Assert.NotNull(lambda);
+        Assert.Equal(string.Empty, expression.Operator);
+
+        // Verify basic lambda structure
+        Assert.Equal(expectedProperty, lambda.Property.TokenLiteral());
+        Assert.Equal(expectedFunction, lambda.Function);
+        Assert.Equal(expectedParameter, lambda.Parameter);
+
+        // Verify lambda body contains complex expressions with logical operators
+        var bodyExpression = lambda.Body as InfixExpression;
+        Assert.NotNull(bodyExpression);
+        
+        // The body should have logical operators (and/or)
+        Assert.True(bodyExpression.Operator.Equals("and", StringComparison.OrdinalIgnoreCase) || 
+                   bodyExpression.Operator.Equals("or", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("tags/any(t: t eq)")]                    // Missing right operand
+    [InlineData("tags/any(t t eq 'test')")]              // Missing colon
+    [InlineData("tags/any( : t eq 'test')")]             // Missing parameter name
+    [InlineData("tags/any(t:)")]                         // Missing lambda body
+    [InlineData("tags/any")]                             // Missing parentheses
+    [InlineData("tags/any()")]                           // Empty lambda
+    [InlineData("tags/invalid(t: t eq 'test')")]         // Invalid function name
+    public void Test_ParsingInvalidQueryLambdaExpression(string input)
+    {
+        var lexer = new QueryLexer(input);
+        var parser = new QueryParser(lexer);
+
+        var result = parser.ParseFilter();
+
+        Assert.True(result.IsFailed);
+    }
+    
 }

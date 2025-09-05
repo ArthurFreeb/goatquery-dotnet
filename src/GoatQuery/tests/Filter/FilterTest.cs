@@ -373,6 +373,98 @@ public sealed class FilterTest
             "manager/manager/manager/firstName eq 'Manager 04'",
             new[] { TestData.Users["Egg"] }
         };
+
+        // Lambda expression tests with addresses/any
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'New York')",
+            new[] { TestData.Users["John"], TestData.Users["Apple"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(address: address/city/name eq 'Chicago')",
+            new[] { TestData.Users["Apple"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(a: a/city/name eq 'Seattle')",
+            new[] { TestData.Users["Jane"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'NonExistentCity')",
+            Array.Empty<User>()
+        };
+
+        // Lambda expression tests with addresses/all
+        yield return new object[] {
+            "addresses/all(addr: addr/city/country eq 'USA')",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "addresses/all(a: a/city/name ne 'Chicago')",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        // Lambda expression tests with addressLine1
+        yield return new object[] {
+            "addresses/any(addr: addr/addressLine1 contains 'Main')",
+            new[] { TestData.Users["John"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(a: a/addressLine1 contains 'St')",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
+
+        // Lambda expressions combined with regular filters
+        yield return new object[] {
+            "firstname eq 'John' and addresses/any(addr: addr/city/name eq 'New York')",
+            new[] { TestData.Users["John"] }
+        };
+
+        yield return new object[] {
+            "age eq 1 or addresses/any(addr: addr/city/name eq 'Miami')",
+            new[] { TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'Seattle') and isEmailVerified eq false",
+            new[] { TestData.Users["Jane"] }
+        };
+
+        // Empty addresses should work with any() returning false and all() returning true
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'AnyCity')",
+            Array.Empty<User>()
+        };
+
+        yield return new object[] {
+            "addresses/all(addr: addr/city/name ne 'SomeCity')",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        // Complex lambda expressions with logical operators
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'New York' or addr/city/name eq 'Chicago')",
+            new[] { TestData.Users["John"], TestData.Users["Apple"] }
+        };
+
+        yield return new object[] {
+            "addresses/any(addr: addr/city/name eq 'Miami' and addr/city/country eq 'USA')",
+            new[] { TestData.Users["Egg"] }
+        };
+
+        // Testing with users that have no addresses (empty collections)
+        yield return new object[] {
+            "firstname eq 'Harry' and addresses/any(addr: addr/city/name eq 'NonExistent')",
+            Array.Empty<User>()
+        };
+
+        yield return new object[] {
+            "firstname eq 'NullUser' and addresses/all(addr: addr/city/country eq 'USA')",
+            Array.Empty<User>()
+        };
     }
 
     [Theory]
@@ -394,6 +486,9 @@ public sealed class FilterTest
     [InlineData("manager//firstName eq 'John'")]
     [InlineData("manager/ eq 'John'")]
     [InlineData("/manager eq 'John'")]
+    [InlineData("addresses/any(addr: addr/nonExistentProperty eq 'test')")]
+    [InlineData("addresses/invalid(addr: addr/city/name eq 'test')")]
+    [InlineData("nonExistentCollection/any(item: item eq 'test')")]
     public void Test_InvalidFilterReturnsError(string filter)
     {
         var query = new Query
