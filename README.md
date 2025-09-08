@@ -15,19 +15,19 @@ dotnet add package GoatQuery.AspNetCore  # For ASP.NET Core integration
 // Basic filtering
 var users = dbContext.Users
     .Apply(new Query { Filter = "age gt 18 and isActive eq true" })
-    .Value.Results;
+    .Value.Query;
 
 // Lambda expressions for collection filtering
 var usersWithLondonAddress = dbContext.Users
     .Apply(new Query { Filter = "addresses/any(x: x/city eq 'London')" })
-    .Value.Results;
+    .Value.Query;
 
 // Complex nested filtering
 var activeUsersWithHighValueOrders = dbContext.Users
     .Apply(new Query {
         Filter = "isActive eq true and orders/any(o: o/items/any(i: i/price gt 1000))"
     })
-    .Value.Results;
+    .Value.Query;
 
 // ASP.NET Core integration
 [HttpGet]
@@ -38,18 +38,18 @@ public IActionResult GetUsers() => Ok(dbContext.Users);
 ## Supported Syntax
 
 ```
-GET /api/users?$filter=age gt 18 and isActive eq true
-GET /api/users?$filter=addresses/any(x: x/city eq 'London')
-GET /api/users?$orderby=lastName asc, firstName desc
-GET /api/users?$top=10&$skip=20&$count=true
-GET /api/users?$search=john
+GET /api/users?filter=age gt 18 and isActive eq true
+GET /api/users?filter=addresses/any(x: x/city eq 'London')
+GET /api/users?orderby=lastName asc, firstName desc
+GET /api/users?top=10&skip=20&count=true
+GET /api/users?search=john
 ```
 
 ## Filtering
 
 ### Basic Operators
 
-- **Comparison**: `eq`, `ne`, `gt`, `ge`, `lt`, `le`
+- **Comparison**: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`
 - **Logical**: `and`, `or`
 - **String**: `contains`
 
@@ -88,7 +88,7 @@ Access nested properties using forward slash (`/`) syntax:
 - String: `'value'`
 - Numbers: `42`, `3.14f`, `2.5m`, `1.0d`
 - Boolean: `true`, `false`
-- DateTime: `2023-12-25T10:30:00Z`
+- DateTime: `2023-12-25T10:30:00Z`, `2023-12-25`
 - GUID: `123e4567-e89b-12d3-a456-426614174000`
 - Null: `null`
 
@@ -145,12 +145,10 @@ public class AddressDto
 **Query Examples:**
 
 ```
-$filter=first_name eq 'John' and age gt 18
-$filter=addresses/any(x: x/street_address contains 'Main St')
-$filter=profile/address/city eq 'London'
+filter=first_name eq 'John' and age gt 18
+filter=addresses/any(x: x/street_address contains 'Main St')
+filter=profile/address/city eq 'London'
 ```
-
-**Property mapping works automatically** - GoatQuery maps JSON property names to .NET properties for all navigation paths and lambda expressions.
 
 ## Advanced Features
 
@@ -194,13 +192,6 @@ GoatQuery automatically generates null-safe expressions for property navigation:
 // Generated: user.Profile != null && user.Profile.Address != null && user.Profile.Address.City == "London"
 ```
 
-### Type Safety and Performance
-
-- **Strong typing**: All expressions are strongly typed using .NET reflection
-- **Compiled expressions**: Queries compile to efficient LINQ expressions
-- **Database translation**: Works with Entity Framework for database-level filtering
-- **Memory efficiency**: Minimal allocations during expression building
-
 ## Search
 
 Implement custom search logic:
@@ -233,7 +224,7 @@ public IActionResult GetUsers() => Ok(dbContext.Users);
 public IActionResult GetUsers([FromQuery] Query query)
 {
     var result = dbContext.Users.Apply(query);
-    return result.IsFailed ? BadRequest(result.Errors) : Ok(result.Value);
+    return result.IsFailed ? BadRequest(result.Errors) : Ok(result.Value.Query.ToList());
 }
 ```
 
@@ -246,15 +237,20 @@ var result = users.Apply(query);
 if (result.IsFailed)
     return BadRequest(result.Errors.Select(e => e.Message));
 
-var data = result.Value.Results;
+var data = result.Value.Query.ToList();
 var count = result.Value.Count;  // If Count = true
 ```
 
 ## Development
 
+### Test
 ```bash
 dotnet test ./src/GoatQuery/tests
-dotnet build --configuration Release
+```
+
+### Run the example project
+
+```bash
 cd example && dotnet run
 ```
 
