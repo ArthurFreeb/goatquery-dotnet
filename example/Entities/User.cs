@@ -18,6 +18,7 @@ public record User
     public DateTime DateOfBirthTz { get; set; }
     public User? Manager { get; set; }
     public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
+    public IEnumerable<string> Tags { get; set; } = Array.Empty<string>();
 }
 
 public record Address

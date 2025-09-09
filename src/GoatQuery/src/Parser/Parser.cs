@@ -212,69 +212,7 @@ public sealed class QueryParser
             return Result.Fail($"Value must be a numeric or date type when using '{statement.Operator}' operand");
         }
 
-        switch (_currentToken.Type)
-        {
-            case TokenType.GUID:
-                if (Guid.TryParse(_currentToken.Literal, out var guidValue))
-                {
-                    statement.Right = new GuidLiteral(_currentToken, guidValue);
-                }
-                break;
-            case TokenType.STRING:
-                statement.Right = new StringLiteral(_currentToken, _currentToken.Literal);
-                break;
-            case TokenType.INT:
-                if (int.TryParse(_currentToken.Literal, out var intValue))
-                {
-                    statement.Right = new IntegerLiteral(_currentToken, intValue);
-                }
-                break;
-            case TokenType.FLOAT:
-                var floatValueWithoutSuffixLiteral = _currentToken.Literal.TrimEnd('f');
-
-                if (float.TryParse(floatValueWithoutSuffixLiteral, out var floatValue))
-                {
-                    statement.Right = new FloatLiteral(_currentToken, floatValue);
-                }
-                break;
-            case TokenType.DECIMAL:
-                var decimalValueWithoutSuffixLiteral = _currentToken.Literal.TrimEnd('m');
-
-                if (decimal.TryParse(decimalValueWithoutSuffixLiteral, out var decimalValue))
-                {
-                    statement.Right = new DecimalLiteral(_currentToken, decimalValue);
-                }
-                break;
-            case TokenType.DOUBLE:
-                var doubleValueWithoutSuffixLiteral = _currentToken.Literal.TrimEnd('d');
-
-                if (double.TryParse(doubleValueWithoutSuffixLiteral, out var doubleValue))
-                {
-                    statement.Right = new DoubleLiteral(_currentToken, doubleValue);
-                }
-                break;
-            case TokenType.DATETIME:
-                if (DateTime.TryParse(_currentToken.Literal, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var dateTimeValue))
-                {
-                    statement.Right = new DateTimeLiteral(_currentToken, dateTimeValue);
-                }
-                break;
-            case TokenType.DATE:
-                if (DateTime.TryParse(_currentToken.Literal, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var dateValue))
-                {
-                    statement.Right = new DateLiteral(_currentToken, dateValue);
-                }
-                break;
-            case TokenType.NULL:
-                statement.Right = new NullLiteral(_currentToken);
-                break;
-            case TokenType.BOOLEAN:
-                if (bool.TryParse(_currentToken.Literal, out var boolValue))
-                {
-                    statement.Right = new BooleanLiteral(_currentToken, boolValue);
-                }
-                break;
-        }
+        statement.Right = ParseLiteral(_currentToken);
 
         return statement;
     }
@@ -325,6 +263,40 @@ public sealed class QueryParser
         };
 
         return lambda;
+    }
+
+    private QueryExpression ParseLiteral(Token token)
+    {
+        return token.Type switch
+        {
+            TokenType.GUID => Guid.TryParse(token.Literal, out var guidValue) 
+                ? new GuidLiteral(token, guidValue) 
+                : null,
+            TokenType.STRING => new StringLiteral(token, token.Literal),
+            TokenType.INT => int.TryParse(token.Literal, out var intValue) 
+                ? new IntegerLiteral(token, intValue) 
+                : null,
+            TokenType.FLOAT => float.TryParse(token.Literal.TrimEnd('f'), out var floatValue) 
+                ? new FloatLiteral(token, floatValue) 
+                : null,
+            TokenType.DECIMAL => decimal.TryParse(token.Literal.TrimEnd('m'), out var decimalValue) 
+                ? new DecimalLiteral(token, decimalValue) 
+                : null,
+            TokenType.DOUBLE => double.TryParse(token.Literal.TrimEnd('d'), out var doubleValue) 
+                ? new DoubleLiteral(token, doubleValue) 
+                : null,
+            TokenType.DATETIME => DateTime.TryParse(token.Literal, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var dateTimeValue) 
+                ? new DateTimeLiteral(token, dateTimeValue) 
+                : null,
+            TokenType.DATE => DateTime.TryParse(token.Literal, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var dateValue) 
+                ? new DateLiteral(token, dateValue) 
+                : null,
+            TokenType.NULL => new NullLiteral(token),
+            TokenType.BOOLEAN => bool.TryParse(token.Literal, out var boolValue) 
+                ? new BooleanLiteral(token, boolValue) 
+                : null,
+            _ => null
+        };
     }
 
     private bool PeekTokenIs(TokenType tokenType)

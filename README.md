@@ -22,6 +22,11 @@ var usersWithLondonAddress = dbContext.Users
     .Apply(new Query { Filter = "addresses/any(x: x/city eq 'London')" })
     .Value.Query;
 
+// Filter by primitive arrays (tags, categories, etc.)
+var vipUsers = dbContext.Users
+    .Apply(new Query { Filter = "tags/any(x: x eq 'vip')" })
+    .Value.Results;
+
 // Complex nested filtering
 var activeUsersWithHighValueOrders = dbContext.Users
     .Apply(new Query {
@@ -41,6 +46,7 @@ public IActionResult GetUsers() => Ok(dbContext.Users);
 GET /api/users?filter=age gt 18 and isActive eq true
 GET /api/users?filter=addresses/any(x: x/city eq 'London')
 GET /api/users?orderby=lastName asc, firstName desc
+GET /api/users?filter=tags/any(x: x eq 'premium')
 GET /api/users?top=10&skip=20&count=true
 GET /api/users?search=john
 ```
@@ -104,6 +110,8 @@ Access nested properties using forward slash (`/`) syntax:
 // Lambda expressions
 "addresses/any(x: x/city eq 'London')"
 "orders/all(o: o/status eq 'completed')"
+"tags/any(x: x eq 'premium')"
+"categories/all(x: x contains 'tech')"
 
 // Nested properties
 "profile/address/city eq 'London'"
@@ -111,6 +119,7 @@ Access nested properties using forward slash (`/`) syntax:
 
 // Complex combinations
 "age gt 25 and addresses/any(x: x/country eq 'US' and x/isActive eq true)"
+"isActive eq true and tags/any(x: x eq 'premium') and scores/all(x: x gt 70)"
 ```
 
 ## Property Mapping
@@ -183,6 +192,34 @@ GoatQuery supports sophisticated collection filtering using lambda expressions:
 "addresses/any(x: x/country/code eq 'US' and x/state/name eq 'California')"
 ```
 
+#### Primitive Array Filtering
+
+Filter arrays of primitive types (strings, numbers, etc.) directly:
+
+```csharp
+// Filter by tags (string array)
+"tags/any(x: x eq 'vip')"
+"tags/any(x: x contains 'premium')"
+"tags/all(x: x eq 'active')"
+
+// Filter by numeric arrays
+"scores/any(x: x gt 80)"
+"ratings/all(x: x ge 4.5)"
+
+// Combined with other filters
+"age gt 18 and tags/any(x: x eq 'premium')"
+```
+
+**Supported primitive types:**
+
+- `string[]`: `tags/any(x: x eq 'premium')`
+- `int[]`: `scores/any(x: x gt 90)`
+- `decimal[]`: `prices/all(x: x lt 100m)`
+- `DateTime[]`: `dates/any(x: x gt 2023-01-01)`
+- `bool[]`: `flags/all(x: x eq true)`
+
+This enables powerful filtering scenarios like user categorization, product tagging, content classification, and multi-criteria matching directly from query parameters.
+
 ### Null Safety
 
 GoatQuery automatically generates null-safe expressions for property navigation:
@@ -244,6 +281,7 @@ var count = result.Value.Count;  // If Count = true
 ## Development
 
 ### Test
+
 ```bash
 dotnet test ./src/GoatQuery/tests
 ```

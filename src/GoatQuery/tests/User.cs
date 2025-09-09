@@ -12,6 +12,7 @@ public record User
     public bool IsEmailVerified { get; set; }
     public User? Manager { get; set; }
     public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
+    public IEnumerable<string> Tags { get; set; } = Array.Empty<string>();
 }
 
 public sealed record CustomJsonPropertyUser : User

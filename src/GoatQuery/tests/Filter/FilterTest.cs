@@ -465,6 +465,21 @@ public sealed class FilterTest
             "firstname eq 'NullUser' and addresses/all(addr: addr/city/country eq 'USA')",
             Array.Empty<User>()
         };
+
+        yield return new object[] {
+            "tags/any(x: x eq 'vip')",
+            new[] { TestData.Users["Apple"] }
+        };
+
+        yield return new object[] {
+            "tags/any(x: x eq 'premium')",
+            new[] { TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "tags/all(x: x eq 'premium')",
+            new[] { TestData.Users["Egg"] }
+        };
     }
 
     [Theory]

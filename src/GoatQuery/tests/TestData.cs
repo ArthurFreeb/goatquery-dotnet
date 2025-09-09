@@ -79,7 +79,8 @@ public static class TestData
                 DateOfBirth = DateTime.Parse("2000-01-01 00:00:00"),
                 BalanceDecimal = 2.00m,
                 IsEmailVerified = true
-            }
+            },
+            Tags = ["vip", "premium"]
         },
         ["Harry"] = new User
         {
@@ -155,7 +156,8 @@ public static class TestData
                         IsEmailVerified = true
                     }
                 }
-            }
+            },
+            Tags = ["premium"]
         },
         ["NullUser"] = new User
         {

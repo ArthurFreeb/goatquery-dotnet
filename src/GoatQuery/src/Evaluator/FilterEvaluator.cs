@@ -99,6 +99,13 @@ public static class FilterEvaluator
         return !type.IsValueType || Nullable.GetUnderlyingType(type) != null;
     }
 
+    private static bool IsPrimitiveType(Type type)
+    {
+        return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || 
+               type == typeof(DateTime) || type == typeof(Guid) ||
+               Nullable.GetUnderlyingType(type) != null;
+    }
+
     private static Expression CreateNullComparison(InfixExpression exp, MemberExpression property)
     {
         return exp.Operator == Keywords.Eq
@@ -165,68 +172,82 @@ public static class FilterEvaluator
         return CreateComparisonExpression(exp.Operator, updatedProperty, value);
     }
 
-    private static Result<Expression> CreateComparisonExpression(string operatorKeyword, MemberExpression property, ConstantExpression value)
+    private static Result<Expression> EvaluateValueComparison(InfixExpression exp, Expression expression)
+    {
+        var valueResult = CreateConstantExpression(exp.Right, expression);
+        if (valueResult.IsFailed) return Result.Fail(valueResult.Errors);
+
+        return CreateComparisonExpression(exp.Operator, expression, valueResult.Value);
+    }
+
+    private static Result<Expression> CreateComparisonExpression(string operatorKeyword, Expression expression, ConstantExpression value)
     {
         return operatorKeyword switch
         {
-            Keywords.Eq => Expression.Equal(property, value),
-            Keywords.Ne => Expression.NotEqual(property, value),
-            Keywords.Contains => CreateContainsExpression(property, value),
-            Keywords.Lt => Expression.LessThan(property, value),
-            Keywords.Lte => Expression.LessThanOrEqual(property, value),
-            Keywords.Gt => Expression.GreaterThan(property, value),
-            Keywords.Gte => Expression.GreaterThanOrEqual(property, value),
+            Keywords.Eq => Expression.Equal(expression, value),
+            Keywords.Ne => Expression.NotEqual(expression, value),
+            Keywords.Contains => CreateContainsExpression(expression, value),
+            Keywords.Lt => Expression.LessThan(expression, value),
+            Keywords.Lte => Expression.LessThanOrEqual(expression, value),
+            Keywords.Gt => Expression.GreaterThan(expression, value),
+            Keywords.Gte => Expression.GreaterThanOrEqual(expression, value),
             _ => Result.Fail($"Unsupported operator: {operatorKeyword}")
+        };
+    }
+
+    private static Result<Expression> CreateComparisonExpression(string operatorKeyword, MemberExpression property, ConstantExpression value)
+    {
+        return CreateComparisonExpression(operatorKeyword, (Expression)property, value);
+    }
+
+    private static Result<ConstantExpression> CreateConstantExpression(QueryExpression literal, Expression expression)
+    {
+        return literal switch
+        {
+            IntegerLiteral intLit => CreateIntegerConstant(intLit.Value, expression),
+            DateLiteral dateLit => Result.Ok(CreateDateConstant(dateLit, expression)),
+            GuidLiteral guidLit => Result.Ok(Expression.Constant(guidLit.Value, expression.Type)),
+            DecimalLiteral decLit => Result.Ok(Expression.Constant(decLit.Value, expression.Type)),
+            FloatLiteral floatLit => Result.Ok(Expression.Constant(floatLit.Value, expression.Type)),
+            DoubleLiteral dblLit => Result.Ok(Expression.Constant(dblLit.Value, expression.Type)),
+            StringLiteral strLit => Result.Ok(Expression.Constant(strLit.Value, expression.Type)),
+            DateTimeLiteral dtLit => Result.Ok(Expression.Constant(dtLit.Value, expression.Type)),
+            BooleanLiteral boolLit => Result.Ok(Expression.Constant(boolLit.Value, expression.Type)),
+            NullLiteral _ => Result.Ok(Expression.Constant(null, expression.Type)),
+            _ => Result.Fail($"Unsupported literal type: {literal.GetType().Name}")
         };
     }
 
     private static Result<(ConstantExpression Value, MemberExpression Property)> CreateConstantExpression(QueryExpression literal, MemberExpression property)
     {
-        return literal switch
-        {
-            IntegerLiteral intLit => CreateIntegerConstant(intLit.Value, property),
-            DateLiteral dateLit => Result.Ok(CreateDateConstant(dateLit, property)),
-            GuidLiteral guidLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(guidLit.Value, property.Type), property)),
-            DecimalLiteral decLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(decLit.Value, property.Type), property)),
-            FloatLiteral floatLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(floatLit.Value, property.Type), property)),
-            DoubleLiteral dblLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(dblLit.Value, property.Type), property)),
-            StringLiteral strLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(strLit.Value, property.Type), property)),
-            DateTimeLiteral dtLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(dtLit.Value, property.Type), property)),
-            BooleanLiteral boolLit => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(boolLit.Value, property.Type), property)),
-            NullLiteral _ => Result.Ok<(ConstantExpression, MemberExpression)>((Expression.Constant(null, property.Type), property)),
-            _ => Result.Fail($"Unsupported literal type: {literal.GetType().Name}")
-        };
+        var constantResult = CreateConstantExpression(literal, (Expression)property);
+        if (constantResult.IsFailed) return Result.Fail(constantResult.Errors);
+
+        return Result.Ok((constantResult.Value, property));
     }
 
-    private static Result<(ConstantExpression, MemberExpression)> CreateIntegerConstant(int value, MemberExpression property)
+    private static Result<ConstantExpression> CreateIntegerConstant(int value, Expression expression)
     {
-        var integerConstant = GetIntegerExpressionConstant(value, property.Type);
-        if (integerConstant.IsFailed)
-        {
-            return Result.Fail(integerConstant.Errors);
-        }
-
-        return Result.Ok<(ConstantExpression, MemberExpression)>((integerConstant.Value, property));
+        return GetIntegerExpressionConstant(value, expression.Type);
     }
 
-    private static (ConstantExpression, MemberExpression) CreateDateConstant(DateLiteral dateLiteral, MemberExpression property)
+    private static ConstantExpression CreateDateConstant(DateLiteral dateLiteral, Expression expression)
     {
-        if (property.Type == typeof(DateTime?))
+        if (expression.Type == typeof(DateTime?))
         {
-            return (Expression.Constant(dateLiteral.Value.Date, typeof(DateTime)), property);
+            return Expression.Constant(dateLiteral.Value.Date, typeof(DateTime));
         }
         else
         {
-            var dateProperty = Expression.Property(property, DatePropertyName);
-            return (Expression.Constant(dateLiteral.Value.Date, dateProperty.Type), dateProperty);
+            return Expression.Constant(dateLiteral.Value.Date, expression.Type);
         }
     }
 
-    private static Expression CreateContainsExpression(MemberExpression property, ConstantExpression value)
+    private static Expression CreateContainsExpression(Expression expression, ConstantExpression value)
     {
-        var propertyToLower = Expression.Call(property, StringToLowerMethod);
+        var expressionToLower = Expression.Call(expression, StringToLowerMethod);
         var valueToLower = Expression.Call(value, StringToLowerMethod);
-        return Expression.Call(propertyToLower, StringContainsMethod, valueToLower);
+        return Expression.Call(expressionToLower, StringContainsMethod, valueToLower);
     }
 
     private static Result<Expression> EvaluateInfixExpression(InfixExpression exp, FilterEvaluationContext context)
@@ -396,7 +417,13 @@ public static class FilterEvaluator
 
         if (identifierName.Equals(context.CurrentLambda.ParameterName, StringComparison.OrdinalIgnoreCase))
         {
-            return Result.Fail($"Lambda parameter '{context.CurrentLambda.ParameterName}' cannot be used directly in comparisons");
+            // For primitive types (string, int, etc.), allow direct comparisons with the lambda parameter
+            if (IsPrimitiveType(context.CurrentLambda.ElementType))
+            {
+                return EvaluateValueComparison(exp, context.CurrentLambda.Parameter);
+            }
+            
+            return Result.Fail($"Lambda parameter '{context.CurrentLambda.ParameterName}' cannot be used directly in comparisons for complex types");
         }
 
         if (!context.PropertyMapping.TryGetValue(identifierName, out var propertyName))
@@ -430,34 +457,11 @@ public static class FilterEvaluator
         var current = (Expression)lambdaParameter;
         var elementType = lambdaParameter.Type;
 
-        // Create property mapping for the element type
-        var lambdaPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(elementType);
-
-        const int firstSegmentAfterParameter = 1;
-        for (int i = firstSegmentAfterParameter; i < propertyPath.Segments.Count; i++)
-        {
-            var segment = propertyPath.Segments[i];
-
-            // Get the actual property name using mapping
-            if (!lambdaPropertyMapping.TryGetValue(segment, out var propertyName))
-            {
-                // If not found in current type, update mapping for nested type and try again
-                if (current is MemberExpression memberExp)
-                {
-                    lambdaPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(memberExp.Type);
-                    if (!lambdaPropertyMapping.TryGetValue(segment, out propertyName))
-                    {
-                        return Result.Fail($"Invalid property '{segment}' in lambda property path");
-                    }
-                }
-                else
-                {
-                    return Result.Fail($"Invalid property '{segment}' in lambda property path");
-                }
-            }
-
-            current = Expression.Property(current, propertyName);
-        }
+        // Build property path from lambda parameter
+        var pathResult = BuildLambdaPropertyPath(current, propertyPath.Segments.Skip(1), elementType);
+        if (pathResult.IsFailed) return pathResult;
+        
+        current = pathResult.Value;
 
         var finalProperty = (MemberExpression)current;
 
@@ -488,6 +492,36 @@ public static class FilterEvaluator
         var allMatch = Expression.Call(allMethod, collection, lambda);
 
         return Expression.AndAlso(hasElements, allMatch);
+    }
+
+    private static Result<Expression> BuildLambdaPropertyPath(Expression startExpression, IEnumerable<string> segments, Type elementType)
+    {
+        var current = startExpression;
+        var lambdaPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(elementType);
+
+        foreach (var segment in segments)
+        {
+            if (!lambdaPropertyMapping.TryGetValue(segment, out var propertyName))
+            {
+                // If not found in current type, update mapping for nested type and try again
+                if (current is MemberExpression memberExp)
+                {
+                    lambdaPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(memberExp.Type);
+                    if (!lambdaPropertyMapping.TryGetValue(segment, out propertyName))
+                    {
+                        return Result.Fail($"Invalid property '{segment}' in lambda property path");
+                    }
+                }
+                else
+                {
+                    return Result.Fail($"Invalid property '{segment}' in lambda property path");
+                }
+            }
+
+            current = Expression.Property(current, propertyName);
+        }
+
+        return Result.Ok(current);
     }
 
     private static Type GetCollectionElementType(Type collectionType)
