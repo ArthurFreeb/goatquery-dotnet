@@ -365,6 +365,21 @@ public sealed class FilterTest
         };
 
         yield return new object[] {
+            "company ne null ",
+            new[] { TestData.Users["Jane"] }
+        };
+
+        yield return new object[] {
+            "company/name eq 'Acme Corp'",
+            new[] { TestData.Users["Jane"] }
+        };
+
+        yield return new object[] {
+            "manager/manager/company/name eq 'My Test Company'",
+            new[] { TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
             "manager/balanceDecimal gt 100m",
             Array.Empty<User>()
         };

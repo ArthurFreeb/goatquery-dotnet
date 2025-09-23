@@ -10,6 +10,7 @@ public record User
     public float? BalanceFloat { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public bool IsEmailVerified { get; set; }
+    public Company? Company { get; set; }
     public User? Manager { get; set; }
     public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
     public IEnumerable<string> Tags { get; set; } = Array.Empty<string>();
@@ -31,4 +32,10 @@ public record City
 {
     public string Name { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
+}
+
+public record Company
+{
+    public string Name { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
 }

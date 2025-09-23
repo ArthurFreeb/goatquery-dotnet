@@ -1,6 +1,4 @@
 using System.Reflection;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Bogus;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +21,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(postgreSqlContainer.GetConnectionString());
 });
 
-builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
-
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -35,6 +31,10 @@ using (var scope = app.Services.CreateScope())
     // Seed data
     if (!context.Users.Any())
     {
+        var companies = new Faker<Company>()
+            .RuleFor(x => x.Name, f => f.Company.CompanyName())
+            .RuleFor(x => x.Department, f => f.Commerce.Department());
+
         var cities = new Faker<City>()
             .RuleFor(x => x.Name, f => f.Address.City())
             .RuleFor(x => x.Country, f => f.Address.Country());
@@ -61,7 +61,8 @@ using (var scope = app.Services.CreateScope())
             })
             .RuleFor(x => x.Manager, (f, u) => f.CreateManager(3))
             .RuleFor(x => x.Addresses, f => f.PickRandom(addresses.Generate(5), f.Random.Int(1, 3)).ToList())
-            .RuleFor(x => x.Tags, f => f.Lorem.Words(f.Random.Int(0, 5)).ToList());
+            .RuleFor(x => x.Tags, f => f.Lorem.Words(f.Random.Int(0, 5)).ToList())
+            .RuleFor(x => x.Company, f => f.PickRandom(companies.Generate(20)));
 
         context.Users.AddRange(users.Generate(1_000));
         context.SaveChanges();
@@ -72,13 +73,12 @@ using (var scope = app.Services.CreateScope())
 
 Console.WriteLine($"Postgres connection string: {postgreSqlContainer.GetConnectionString()}");
 
-app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper mapper, [AsParameters] Query query) =>
+app.MapGet("/minimal/users", (ApplicationDbContext db, [AsParameters] Query query) =>
 {
     var result = db.Users
+        .Include(x => x.Company)
         .Include(x => x.Manager)
             .ThenInclude(x => x.Manager)
-        .Where(x => !x.IsDeleted)
-        .ProjectTo<UserDto>(mapper.ConfigurationProvider)
         .Apply(query);
 
     if (result.IsFailed)
@@ -86,7 +86,7 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper ma
         return Results.BadRequest(new { message = result.Errors });
     }
 
-    var response = new PagedResponse<UserDto>(result.Value.Query.ToList(), result.Value.Count);
+    var response = new PagedResponse<User>(result.Value.Query.ToList(), result.Value.Count);
 
     return Results.Ok(response);
 });

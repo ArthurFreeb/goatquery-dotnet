@@ -76,22 +76,67 @@ public static class FilterEvaluator
     {
         var current = startExpression;
         var nullChecks = new List<Expression>();
+        var currentPropertyMapping = propertyMapping;
 
         foreach (var (segment, isLast) in propertyPath.Segments.Select((s, i) => (s, i == propertyPath.Segments.Count - 1)))
         {
-            if (!propertyMapping.TryGetValue(segment, out var propertyName))
-                return Result.Fail($"Invalid property '{segment}' in path");
+            var propertyResult = ResolvePropertySegment(segment, current, currentPropertyMapping);
+            if (propertyResult.IsFailed) return Result.Fail(propertyResult.Errors);
 
-            current = Expression.Property(current, propertyName);
+            current = propertyResult.Value;
 
             // Add null check for intermediate reference types only (not the final property)
             if (!isLast && IsNullableReferenceType(current.Type))
             {
                 nullChecks.Add(Expression.NotEqual(current, Expression.Constant(null, current.Type)));
             }
+
+            // Update property mapping for nested object navigation
+            if (!isLast)
+            {
+                currentPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(current.Type);
+            }
         }
 
         return Result.Ok(((MemberExpression)current, nullChecks));
+    }
+
+    private static Result<MemberExpression> ResolvePropertySegment(
+        string segment,
+        Expression parentExpression,
+        Dictionary<string, string> propertyMapping)
+    {
+        if (!propertyMapping.TryGetValue(segment, out var propertyName))
+            return Result.Fail($"Invalid property '{segment}' in path");
+
+        return Expression.Property(parentExpression, propertyName);
+    }
+
+    private static Result<MemberExpression> ResolvePropertyPathForCollection(
+        PropertyPath propertyPath,
+        Expression baseExpression,
+        Dictionary<string, string> propertyMapping)
+    {
+        var current = baseExpression;
+        var currentPropertyMapping = propertyMapping;
+
+        for (int i = 0; i < propertyPath.Segments.Count; i++)
+        {
+            var segment = propertyPath.Segments[i];
+            var propertyResult = ResolvePropertySegment(segment, current, currentPropertyMapping);
+            if (propertyResult.IsFailed)
+                return Result.Fail(propertyResult.Errors);
+
+            current = propertyResult.Value;
+
+            // Update property mapping for nested object navigation
+            if (i < propertyPath.Segments.Count - 1)
+            {
+                currentPropertyMapping = PropertyMappingHelper.CreatePropertyMapping(current.Type);
+            }
+        }
+
+        return (MemberExpression)current;
     }
 
     private static bool IsNullableReferenceType(Type type)
@@ -363,15 +408,7 @@ public static class FilterEvaluator
                 return Expression.Property(baseExpression, propertyName);
 
             case PropertyPath propertyPath:
-                var current = baseExpression;
-                for (int i = 0; i < propertyPath.Segments.Count; i++)
-                {
-                    var segment = propertyPath.Segments[i];
-                    if (!propertyMapping.TryGetValue(segment, out var segmentPropertyName))
-                        return Result.Fail($"Invalid property '{segment}' in lambda expression property path");
-                    current = Expression.Property(current, segmentPropertyName);
-                }
-                return (MemberExpression)current;
+                return ResolvePropertyPathForCollection(propertyPath, baseExpression, propertyMapping);
 
             default:
                 return Result.Fail($"Unsupported property type in lambda expression: {property.GetType().Name}");

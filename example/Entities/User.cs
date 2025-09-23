@@ -19,6 +19,7 @@ public record User
     public User? Manager { get; set; }
     public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
     public IEnumerable<string> Tags { get; set; } = Array.Empty<string>();
+    public Company? Company { get; set; }
 }
 
 public record Address
@@ -33,4 +34,11 @@ public record City
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
+}
+
+public record Company
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Department { get; set; } = string.Empty;
 }

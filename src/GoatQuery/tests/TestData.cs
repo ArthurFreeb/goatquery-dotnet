@@ -48,6 +48,11 @@ public static class TestData
                     AddressLine1 = "789 Pine Rd",
                     City = new City { Name = "Seattle", Country = "USA" }
                 }
+            },
+            Company = new Company
+            {
+                Name = "Acme Corp",
+                Department = "Sales"
             }
         },
         ["Apple"] = new User
@@ -154,6 +159,11 @@ public static class TestData
                         DateOfBirth = DateTime.Parse("1983-04-21 00:00:00"),
                         BalanceDecimal = 39.00m,
                         IsEmailVerified = true
+                    },
+                    Company = new Company
+                    {
+                        Name = "My Test Company",
+                        Department = "Development"
                     }
                 }
             },
