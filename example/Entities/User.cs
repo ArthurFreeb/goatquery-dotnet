@@ -17,8 +17,8 @@ public record User
     [Column(TypeName = "timestamp without time zone")]
     public DateTime DateOfBirthTz { get; set; }
     public User? Manager { get; set; }
-    public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
-    public IEnumerable<string> Tags { get; set; } = Array.Empty<string>();
+    public ICollection<Address> Addresses { get; set; } = new List<Address>();
+    public ICollection<string> Tags { get; set; } = new List<string>();
     public Company? Company { get; set; }
 }
 

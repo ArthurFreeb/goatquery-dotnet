@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text.Json.Serialization;
 using FluentResults;
 
 public static class QueryableExtension
@@ -18,7 +15,8 @@ public static class QueryableExtension
 
         var type = typeof(T);
 
-        var propertyMappings = PropertyMappingHelper.CreatePropertyMapping<T>();
+        var maxDepth = options?.MaxPropertyMappingDepth ?? new QueryOptions().MaxPropertyMappingDepth;
+        var propertyMappingTree = PropertyMappingTreeBuilder.BuildMappingTree<T>(maxDepth);
 
         // Filter
         if (!string.IsNullOrEmpty(query.Filter))
@@ -33,7 +31,7 @@ public static class QueryableExtension
 
             ParameterExpression parameter = Expression.Parameter(type);
 
-            var expression = FilterEvaluator.Evaluate(statement.Value.Expression, parameter, propertyMappings);
+            var expression = FilterEvaluator.Evaluate(statement.Value.Expression, parameter, propertyMappingTree);
             if (expression.IsFailed)
             {
                 return Result.Fail(expression.Errors);
@@ -75,7 +73,7 @@ public static class QueryableExtension
 
             var parameter = Expression.Parameter(type);
 
-            var orderByQuery = OrderByEvaluator.Evaluate<T>(statements, parameter, queryable, propertyMappings);
+            var orderByQuery = OrderByEvaluator.Evaluate<T>(statements, parameter, queryable, propertyMappingTree);
             if (orderByQuery.IsFailed)
             {
                 return Result.Fail(orderByQuery.Errors);

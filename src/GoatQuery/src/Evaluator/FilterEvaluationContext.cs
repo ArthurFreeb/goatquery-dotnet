@@ -5,13 +5,13 @@ using System.Linq.Expressions;
 internal class FilterEvaluationContext
 {
     public ParameterExpression RootParameter { get; }
-    public Dictionary<string, string> PropertyMapping { get; }
+    public PropertyMappingTree PropertyMappingTree { get; }
     public Stack<LambdaScope> LambdaScopes { get; } = new Stack<LambdaScope>();
 
-    public FilterEvaluationContext(ParameterExpression rootParameter, Dictionary<string, string> propertyMapping)
+    public FilterEvaluationContext(ParameterExpression rootParameter, PropertyMappingTree propertyMappingTree)
     {
         RootParameter = rootParameter;
-        PropertyMapping = propertyMapping;
+        PropertyMappingTree = propertyMappingTree;
     }
 
     public bool IsInLambdaScope => LambdaScopes.Count > 0;

@@ -19,6 +19,8 @@ public class UsersController : ControllerBase
     {
         var users = _db.Users
             .Include(x => x.Company)
+            .Include(x => x.Addresses)
+                .ThenInclude(x => x.City)
             .Include(x => x.Manager)
                 .ThenInclude(x => x.Manager)
             .Where(x => !x.IsDeleted);

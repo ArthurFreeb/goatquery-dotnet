@@ -7,18 +7,18 @@ using FluentResults;
 
 public static class OrderByEvaluator
 {
-    public static Result<IQueryable<T>> Evaluate<T>(IEnumerable<OrderByStatement> statements, ParameterExpression parameterExpression, IQueryable<T> queryable, Dictionary<string, string> propertyMapping)
+    public static Result<IQueryable<T>> Evaluate<T>(IEnumerable<OrderByStatement> statements, ParameterExpression parameterExpression, IQueryable<T> queryable, PropertyMappingTree propertyMappingTree)
     {
         var isAlreadyOrdered = false;
 
         foreach (var statement in statements)
         {
-            if (!propertyMapping.TryGetValue(statement.TokenLiteral(), out var propertyName))
+            if (!propertyMappingTree.TryGetProperty(statement.TokenLiteral(), out var propertyNode))
             {
                 return Result.Fail(new Error($"Invalid property '{statement.TokenLiteral()}' within orderby"));
             }
 
-            var property = Expression.Property(parameterExpression, propertyName);
+            var property = Expression.Property(parameterExpression, propertyNode.ActualPropertyName);
             var lambda = Expression.Lambda(property, parameterExpression);
 
             if (isAlreadyOrdered)

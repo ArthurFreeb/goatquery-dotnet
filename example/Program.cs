@@ -1,6 +1,4 @@
-using System.Reflection;
 using Bogus;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -77,8 +75,11 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [AsParameters] Query quer
 {
     var result = db.Users
         .Include(x => x.Company)
-        .Include(x => x.Manager)
-            .ThenInclude(x => x.Manager)
+            .Include(x => x.Addresses)
+                .ThenInclude(x => x.City)
+            .Include(x => x.Manager)
+                .ThenInclude(x => x.Manager)
+            .Where(x => !x.IsDeleted)
         .Apply(query);
 
     if (result.IsFailed)

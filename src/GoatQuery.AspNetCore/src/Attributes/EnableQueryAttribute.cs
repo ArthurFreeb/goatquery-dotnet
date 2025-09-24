@@ -5,11 +5,12 @@ public sealed class EnableQueryAttribute<T> : ActionFilterAttribute
 {
     private readonly QueryOptions? _options;
 
-    public EnableQueryAttribute(int maxTop)
+    public EnableQueryAttribute(int maxTop, int maxPropertyMappingDepth = 5)
     {
         var options = new QueryOptions()
         {
-            MaxTop = maxTop
+            MaxTop = maxTop,
+            MaxPropertyMappingDepth = maxPropertyMappingDepth
         };
 
         _options = options;
