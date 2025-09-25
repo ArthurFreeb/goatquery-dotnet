@@ -55,27 +55,26 @@ public static class FilterEvaluator
         var propertyPathResult = BuildPropertyPath(propertyPath, baseExpression, context.PropertyMappingTree);
         if (propertyPathResult.IsFailed) return Result.Fail(propertyPathResult.Errors);
 
-        var (finalProperty, nullChecks) = propertyPathResult.Value;
+        var finalProperty = propertyPathResult.Value;
 
         if (exp.Right is NullLiteral)
         {
             var nullComparison = CreateNullComparison(exp, finalProperty);
-            return CombineWithNullChecks(nullComparison, nullChecks);
+            return nullComparison;
         }
 
         var comparisonResult = EvaluateValueComparison(exp, finalProperty);
         if (comparisonResult.IsFailed) return comparisonResult;
 
-        return CombineWithNullChecks(comparisonResult.Value, nullChecks);
+        return comparisonResult.Value;
     }
 
-    private static Result<(MemberExpression Property, List<Expression> NullChecks)> BuildPropertyPath(
+    private static Result<MemberExpression> BuildPropertyPath(
         PropertyPath propertyPath,
         Expression startExpression,
         PropertyMappingTree propertyMappingTree)
     {
         var current = startExpression;
-        var nullChecks = new List<Expression>();
         var currentMappingTree = propertyMappingTree;
 
         foreach (var (segment, isLast) in propertyPath.Segments.Select((s, i) => (s, i == propertyPath.Segments.Count - 1)))
@@ -84,12 +83,6 @@ public static class FilterEvaluator
                 return Result.Fail($"Invalid property '{segment}' in path");
 
             current = Expression.Property(current, propertyNode.ActualPropertyName);
-
-            // Add null check for intermediate reference types only (not the final property)
-            if (!isLast && IsNullableReferenceType(current.Type))
-            {
-                nullChecks.Add(Expression.NotEqual(current, Expression.Constant(null, current.Type)));
-            }
 
             // Navigate to nested mapping for next segment
             if (!isLast)
@@ -101,7 +94,7 @@ public static class FilterEvaluator
             }
         }
 
-        return Result.Ok(((MemberExpression)current, nullChecks));
+        return Result.Ok((MemberExpression)current);
     }
 
     private static Result<MemberExpression> ResolvePropertyPathForCollection(
@@ -185,17 +178,6 @@ public static class FilterEvaluator
         };
     }
 
-    private static Result<Expression> CombineWithNullChecks(Expression comparison, List<Expression> nullChecks)
-    {
-        if (!nullChecks.Any())
-        {
-            return comparison;
-        }
-
-        var allNullChecks = nullChecks.Aggregate(Expression.AndAlso);
-
-        return Expression.AndAlso(allNullChecks, comparison);
-    }
 
     private static Result<Expression> EvaluateValueComparison(InfixExpression exp, MemberExpression property)
     {

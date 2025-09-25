@@ -1,4 +1,8 @@
+using System.Reflection;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Bogus;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
@@ -18,6 +22,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(postgreSqlContainer.GetConnectionString());
 });
+
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
@@ -71,7 +77,7 @@ using (var scope = app.Services.CreateScope())
 
 Console.WriteLine($"Postgres connection string: {postgreSqlContainer.GetConnectionString()}");
 
-app.MapGet("/minimal/users", (ApplicationDbContext db, [AsParameters] Query query) =>
+app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper mapper, [AsParameters] Query query) =>
 {
     var result = db.Users
         .Include(x => x.Company)
@@ -80,6 +86,7 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [AsParameters] Query quer
             .Include(x => x.Manager)
                 .ThenInclude(x => x.Manager)
             .Where(x => !x.IsDeleted)
+        .ProjectTo<UserDto>(mapper.ConfigurationProvider)
         .Apply(query);
 
     if (result.IsFailed)
@@ -87,7 +94,7 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [AsParameters] Query quer
         return Results.BadRequest(new { message = result.Errors });
     }
 
-    var response = new PagedResponse<User>(result.Value.Query.ToList(), result.Value.Count);
+    var response = new PagedResponse<UserDto>(result.Value.Query.ToList(), result.Value.Count);
 
     return Results.Ok(response);
 });
