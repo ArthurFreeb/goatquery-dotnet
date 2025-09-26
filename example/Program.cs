@@ -81,11 +81,11 @@ app.MapGet("/minimal/users", (ApplicationDbContext db, [FromServices] IMapper ma
 {
     var result = db.Users
         .Include(x => x.Company)
-            .Include(x => x.Addresses)
-                .ThenInclude(x => x.City)
-            .Include(x => x.Manager)
-                .ThenInclude(x => x.Manager)
-            .Where(x => !x.IsDeleted)
+        .Include(x => x.Addresses)
+            .ThenInclude(x => x.City)
+        .Include(x => x.Manager)
+            .ThenInclude(x => x.Manager)
+        .Where(x => !x.IsDeleted)
         .ProjectTo<UserDto>(mapper.ConfigurationProvider)
         .Apply(query);
 
