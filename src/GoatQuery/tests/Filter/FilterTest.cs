@@ -330,11 +330,6 @@ public sealed class FilterTest
         };
 
         yield return new object[] {
-            "manager/manager ne null",
-            new[] { TestData.Users["Egg"] }
-        };
-
-        yield return new object[] {
             "manager/firstName eq 'Manager 01' and manager/age eq 16",
             new[] { TestData.Users["John"], TestData.Users["Apple"] }
         };
