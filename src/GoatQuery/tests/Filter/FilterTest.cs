@@ -1,7 +1,14 @@
 using Xunit;
 
-public sealed class FilterTest
+public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
 {
+    private readonly DatabaseTestFixture _fixture;
+
+    public FilterTest(DatabaseTestFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     public static IEnumerable<object[]> Parameters()
     {
         yield return new object[] {
