@@ -52,21 +52,27 @@ public static class FilterEvaluator
             (Expression)context.CurrentLambda.Parameter :
             context.RootParameter;
 
-        var propertyPathResult = BuildPropertyPath(propertyPath, baseExpression, context.PropertyMappingTree);
-        if (propertyPathResult.IsFailed) return Result.Fail(propertyPathResult.Errors);
+        var safePathResult = BuildPropertyPathWithGuard(propertyPath.Segments, baseExpression, context.PropertyMappingTree);
+        if (safePathResult.IsFailed) return Result.Fail(safePathResult.Errors);
 
-        var finalProperty = propertyPathResult.Value;
+        var (finalProperty, guard, container) = safePathResult.Value;
 
         if (exp.Right is NullLiteral)
         {
-            var nullComparison = CreateNullComparison(exp, finalProperty);
-            return nullComparison;
+            return ComposeNestedNullComparison(finalProperty, guard, exp.Operator);
         }
 
         var comparisonResult = EvaluateValueComparison(exp, finalProperty);
         if (comparisonResult.IsFailed) return comparisonResult;
 
-        return comparisonResult.Value;
+        var comparison = comparisonResult.Value;
+
+        var requireFinalNotNull = RequiresFinalNotNull(exp.Operator, finalProperty, exp.Right);
+        var combinedGuard = requireFinalNotNull
+            ? Expression.AndAlso(guard, Expression.NotEqual(finalProperty, Expression.Constant(null, finalProperty.Type)))
+            : guard;
+
+        return Expression.AndAlso(combinedGuard, comparison);
     }
 
     private static Result<MemberExpression> BuildPropertyPath(
@@ -84,7 +90,6 @@ public static class FilterEvaluator
 
             current = Expression.Property(current, propertyNode.ActualPropertyName);
 
-            // Navigate to nested mapping for next segment
             if (!isLast)
             {
                 if (!propertyNode.HasNestedMapping)
@@ -95,6 +100,55 @@ public static class FilterEvaluator
         }
 
         return Result.Ok((MemberExpression)current);
+    }
+
+    private static Result<(MemberExpression Final, Expression Guard, Expression Container)> BuildPropertyPathWithGuard(
+        IList<string> segments,
+        Expression startExpression,
+        PropertyMappingTree propertyMappingTree)
+    {
+        if (segments == null || segments.Count == 0)
+            return Result.Fail("Property path segments cannot be empty");
+
+        var current = startExpression;
+        var currentMappingTree = propertyMappingTree;
+
+        Expression guard = Expression.Constant(true);
+        Expression container = startExpression;
+
+        for (int i = 0; i < segments.Count; i++)
+        {
+            var segment = segments[i];
+            var isLast = i == segments.Count - 1;
+
+            if (!currentMappingTree.TryGetProperty(segment, out var propertyNode))
+                return Result.Fail($"Invalid property '{segment}' in path");
+
+            var next = Expression.Property(current, propertyNode.ActualPropertyName);
+
+            if (!isLast)
+            {
+                if (!propertyNode.HasNestedMapping)
+                    return Result.Fail($"Property '{segment}' does not support nested navigation");
+
+                if (!next.Type.IsValueType || Nullable.GetUnderlyingType(next.Type) != null)
+                {
+                    var notNull = Expression.NotEqual(next, Expression.Constant(null, next.Type));
+                    guard = Expression.AndAlso(guard, notNull);
+                }
+
+                current = next;
+                container = current;
+                currentMappingTree = propertyNode.NestedMapping;
+            }
+            else
+            {
+                var final = Expression.Property(current, propertyNode.ActualPropertyName);
+                return Result.Ok(((MemberExpression)final, guard, container));
+            }
+        }
+
+        return Result.Fail("Invalid property path");
     }
 
     private static Result<MemberExpression> ResolvePropertyPathForCollection(
@@ -113,8 +167,7 @@ public static class FilterEvaluator
                 return Result.Fail($"Invalid property '{segment}' in lambda expression property path");
 
             current = Expression.Property(current, propertyNode.ActualPropertyName);
-
-            // Navigate to nested mapping for next segment
+            if (!isLast)
             if (i < propertyPath.Segments.Count - 1)
             {
                 if (!propertyNode.HasNestedMapping)
@@ -343,7 +396,6 @@ public static class FilterEvaluator
 
         var (collectionProperty, elementType, lambdaParameter) = setupResult.Value;
 
-        // Enter lambda scope
         context.EnterLambdaScope(lambdaExp.Parameter, lambdaParameter, elementType);
 
         try
@@ -399,7 +451,7 @@ public static class FilterEvaluator
                 {
                     return Result.Fail($"Invalid property '{identifier.TokenLiteral()}' in lambda expression");
                 }
-                return Expression.Property(baseExpression, propertyNode.ActualPropertyName);
+                return Expression.Property(baseExpression, propertyNode.ActualPropertyName) as MemberExpression;
 
             case PropertyPath propertyPath:
                 return ResolvePropertyPathForCollection(propertyPath, baseExpression, propertyMappingTree);
@@ -407,6 +459,42 @@ public static class FilterEvaluator
             default:
                 return Result.Fail($"Unsupported property type in lambda expression: {property.GetType().Name}");
         }
+    }
+
+    private static bool RequiresFinalNotNull(string operatorKeyword, MemberExpression finalProperty, QueryExpression right)
+    {
+        if (operatorKeyword.Equals(Keywords.Contains, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (right is NullLiteral)
+            return false;
+
+        var type = finalProperty.Type;
+        if (!type.IsValueType)
+            return true;
+
+        return Nullable.GetUnderlyingType(type) != null;
+    }
+
+    private static Expression ComposeNestedNullComparison(MemberExpression finalProperty, Expression guard, string operatorKeyword)
+    {
+        var isEq = operatorKeyword.Equals(Keywords.Eq, StringComparison.OrdinalIgnoreCase);
+        var isNe = operatorKeyword.Equals(Keywords.Ne, StringComparison.OrdinalIgnoreCase);
+        var nullConst = Expression.Constant(null, finalProperty.Type);
+        var finalEqNull = Expression.Equal(finalProperty, nullConst);
+        var finalNeNull = Expression.NotEqual(finalProperty, nullConst);
+        var notGuard = Expression.Not(guard);
+
+        if (isEq)
+        {
+            return Expression.OrElse(notGuard, finalEqNull);
+        }
+        else if (isNe)
+        {
+            return Expression.AndAlso(guard, finalNeNull);
+        }
+
+        return Expression.AndAlso(guard, finalEqNull);
     }
 
     private static Result<Expression> EvaluateLambdaBody(QueryExpression expression, FilterEvaluationContext context)
@@ -448,7 +536,6 @@ public static class FilterEvaluator
 
         if (identifierName.Equals(context.CurrentLambda.ParameterName, StringComparison.OrdinalIgnoreCase))
         {
-            // For primitive types (string, int, etc.), allow direct comparisons with the lambda parameter
             if (IsPrimitiveType(context.CurrentLambda.ElementType))
             {
                 return EvaluateValueComparison(exp, context.CurrentLambda.Parameter);
@@ -484,28 +571,29 @@ public static class FilterEvaluator
 
     private static Result<Expression> EvaluateLambdaPropertyPath(InfixExpression exp, PropertyPath propertyPath, ParameterExpression lambdaParameter)
     {
-        // Skip the first segment (lambda parameter name) and build property path from lambda parameter
-        var current = (Expression)lambdaParameter;
         var elementType = lambdaParameter.Type;
+        var mapping = PropertyMappingTreeBuilder.BuildMappingTree(elementType, GetDefaultMaxDepth());
 
-        // Build property path from lambda parameter
-        var pathResult = BuildLambdaPropertyPath(current, propertyPath.Segments.Skip(1).ToList(), elementType);
-        if (pathResult.IsFailed) return pathResult;
+        var safePathResult = BuildPropertyPathWithGuard(propertyPath.Segments.Skip(1).ToList(), lambdaParameter, mapping);
+        if (safePathResult.IsFailed) return Result.Fail(safePathResult.Errors);
 
-        current = pathResult.Value;
+        var (finalProperty, guard, container) = safePathResult.Value;
 
-        var finalProperty = (MemberExpression)current;
-
-        // Handle null comparisons
         if (exp.Right is NullLiteral)
         {
-            return exp.Operator == Keywords.Eq
-                ? Expression.Equal(finalProperty, Expression.Constant(null, finalProperty.Type))
-                : Expression.NotEqual(finalProperty, Expression.Constant(null, finalProperty.Type));
+            return ComposeNestedNullComparison(finalProperty, guard, exp.Operator);
         }
 
-        // Handle value comparisons
-        return EvaluateValueComparison(exp, finalProperty);
+        var comparisonResult = EvaluateValueComparison(exp, finalProperty);
+        if (comparisonResult.IsFailed) return comparisonResult;
+
+        var comparison = comparisonResult.Value;
+        var requireFinalNotNull = RequiresFinalNotNull(exp.Operator, finalProperty, exp.Right);
+        var combinedGuard = requireFinalNotNull
+            ? Expression.AndAlso(guard, Expression.NotEqual(finalProperty, Expression.Constant(null, finalProperty.Type)))
+            : guard;
+
+        return Expression.AndAlso(combinedGuard, comparison);
     }
 
     private static Expression CreateAnyExpression(MemberExpression collection, LambdaExpression lambda, Type elementType)
@@ -539,7 +627,6 @@ public static class FilterEvaluator
 
             current = Expression.Property(current, propertyNode.ActualPropertyName);
 
-            // Update mapping tree for nested navigation
             if (propertyNode.HasNestedMapping)
             {
                 currentMappingTree = propertyNode.NestedMapping;
@@ -556,7 +643,6 @@ public static class FilterEvaluator
 
     private static Type GetCollectionElementType(Type collectionType)
     {
-        // Handle IEnumerable<T>
         if (collectionType.IsGenericType)
         {
             var genericArgs = collectionType.GetGenericArguments();
@@ -567,7 +653,6 @@ public static class FilterEvaluator
             }
         }
 
-        // Handle arrays
         if (collectionType.IsArray)
         {
             return collectionType.GetElementType();
@@ -585,7 +670,6 @@ public static class FilterEvaluator
                 return CreateEnumConstantFromInteger(value, targetType);
             }
 
-            // Fetch the underlying type if it's nullable.
             var underlyingType = Nullable.GetUnderlyingType(targetType);
             var type = underlyingType ?? targetType;
 
