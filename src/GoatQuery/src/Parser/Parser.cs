@@ -190,7 +190,7 @@ public sealed class QueryParser
 
         var statement = new InfixExpression(_currentToken, leftExpression, _currentToken.Literal);
 
-        if (!PeekTokenIn(TokenType.STRING, TokenType.INT, TokenType.GUID, TokenType.DATETIME, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATE, TokenType.NULL, TokenType.BOOLEAN))
+        if (!PeekTokenIn(TokenType.STRING, TokenType.INT, TokenType.GUID, TokenType.DATETIME, TokenType.DECIMAL, TokenType.FLOAT, TokenType.DOUBLE, TokenType.DATE, TokenType.NULL, TokenType.BOOLEAN, TokenType.IDENT))
         {
             return Result.Fail("Invalid value type within filter");
         }
@@ -295,6 +295,7 @@ public sealed class QueryParser
             TokenType.BOOLEAN => bool.TryParse(token.Literal, out var boolValue) 
                 ? new BooleanLiteral(token, boolValue) 
                 : null,
+            TokenType.IDENT => new EnumSymbolLiteral(token, token.Literal),
             _ => null
         };
     }

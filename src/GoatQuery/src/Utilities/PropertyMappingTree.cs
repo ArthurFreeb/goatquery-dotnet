@@ -172,11 +172,19 @@ public static class PropertyMappingTreeBuilder
 
     private static bool IsPrimitiveType(Type type)
     {
+        if (type.IsEnum)
+            return true;
+
         if (type.IsPrimitive || PrimitiveTypes.Contains(type))
             return true;
 
-        // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(type);
-        return underlyingType != null && (underlyingType.IsPrimitive || PrimitiveTypes.Contains(underlyingType));
+        if (underlyingType == null)
+            return false;
+
+        if (underlyingType.IsEnum)
+            return true;
+
+        return underlyingType.IsPrimitive || PrimitiveTypes.Contains(underlyingType);
     }
 }

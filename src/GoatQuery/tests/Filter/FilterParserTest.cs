@@ -23,6 +23,7 @@ public sealed class FilterParserTest
     [InlineData("dateOfBirth gte 2000-01-01", "dateOfBirth", "gte", "2000-01-01")]
     [InlineData("dateOfBirth eq 2023-01-30T09:29:55.1750906Z", "dateOfBirth", "eq", "2023-01-30T09:29:55.1750906Z")]
     [InlineData("balance eq null", "balance", "eq", "null")]
+    [InlineData("status eq Active", "status", "eq", "Active")]
     [InlineData("balance ne null", "balance", "ne", "null")]
     [InlineData("name eq NULL", "name", "eq", "NULL")]
     public void Test_ParsingFilterStatement(string input, string expectedLeft, string expectedOperator, string expectedRight)
@@ -168,6 +169,7 @@ public sealed class FilterParserTest
     [Theory]
     [InlineData("manager/firstName eq 'John'", new string[] { "manager", "firstName" }, "eq", "John")]
     [InlineData("manager/manager/firstName eq 'John'", new string[] { "manager", "manager", "firstName" }, "eq", "John")]
+    [InlineData("manager/status eq Active", new string[] { "manager", "status" }, "eq", "Active")]
     public void Test_ParsingFilterStatementWithNestedProperty(string input, string[] expectedLeft, string expectedOperator, string expectedRight)
     {
         var lexer = new QueryLexer(input);

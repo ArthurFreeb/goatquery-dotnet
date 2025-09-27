@@ -10,6 +10,7 @@ public record User
     public float? BalanceFloat { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public bool IsEmailVerified { get; set; }
+    public Status Status { get; set; }
     public Company? Company { get; set; }
     public User? Manager { get; set; }
     public IEnumerable<Address> Addresses { get; set; } = Array.Empty<Address>();
@@ -41,4 +42,12 @@ public record Company
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum Status
+{
+    Active,
+    Inactive,
+    Suspended
 }

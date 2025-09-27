@@ -9,6 +9,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2004-01-31 23:59:59").ToUniversalTime(),
             BalanceDecimal = 1.50m,
             IsEmailVerified = true,
+            Status = Status.Active,
             Addresses = new[]
             {
                 new Address
@@ -28,7 +29,8 @@ public static class TestData
                 Firstname = "Manager 01",
                 DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
                 BalanceDecimal = 2.00m,
-                IsEmailVerified = false
+                IsEmailVerified = false,
+                Status = Status.Active
             }
         },
         ["Jane"] = new User
@@ -38,6 +40,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2020-05-09 15:30:00").ToUniversalTime(),
             BalanceDecimal = 0,
             IsEmailVerified = false,
+            Status = Status.Inactive,
             Addresses = new[]
             {
                 new Address
@@ -59,6 +62,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("1980-12-31 00:00:01").ToUniversalTime(),
             BalanceFloat = 1204050.98f,
             IsEmailVerified = true,
+            Status = Status.Active,
             Addresses = new[]
             {
                 new Address
@@ -78,7 +82,8 @@ public static class TestData
                 Firstname = "Manager 01",
                 DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
                 BalanceDecimal = 2.00m,
-                IsEmailVerified = true
+                IsEmailVerified = true,
+                Status = Status.Active
             },
             Tags = ["vip", "premium"]
         },
@@ -89,6 +94,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2002-08-01").ToUniversalTime(),
             BalanceDecimal = 0.5372958205929493m,
             IsEmailVerified = false,
+            Status = Status.Suspended,
             Addresses = Array.Empty<Address>()
         },
         ["Doe"] = new User
@@ -98,6 +104,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2023-07-26 12:00:30").ToUniversalTime(),
             BalanceDecimal = null,
             IsEmailVerified = true,
+            Status = Status.Active,
             Addresses = new[]
             {
                 new Address
@@ -114,6 +121,7 @@ public static class TestData
             DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
             BalanceDouble = 1334534453453433.33435443343231235652d,
             IsEmailVerified = false,
+            Status = Status.Active,
             Addresses = new[]
             {
                 new Address
@@ -134,6 +142,7 @@ public static class TestData
                 DateOfBirth = DateTime.Parse("1999-04-21 00:00:00").ToUniversalTime(),
                 BalanceDecimal = 19.00m,
                 IsEmailVerified = true,
+                Status = Status.Active,
                 Manager = new User
                 {
                     Age = 30,
@@ -141,13 +150,15 @@ public static class TestData
                     DateOfBirth = DateTime.Parse("1993-04-21 00:00:00").ToUniversalTime(),
                     BalanceDecimal = 29.00m,
                     IsEmailVerified = true,
+                    Status = Status.Active,
                     Manager = new User
                     {
                         Age = 40,
                         Firstname = "Manager 04",
                         DateOfBirth = DateTime.Parse("1983-04-21 00:00:00").ToUniversalTime(),
                         BalanceDecimal = 39.00m,
-                        IsEmailVerified = true
+                        IsEmailVerified = true,
+                        Status = Status.Active
                     },
                     Company = new Company
                     {
@@ -167,6 +178,7 @@ public static class TestData
             BalanceDouble = null,
             BalanceFloat = null,
             IsEmailVerified = true,
+            Status = Status.Inactive,
             Addresses = Array.Empty<Address>()
         },
     };
