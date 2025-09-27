@@ -224,6 +224,22 @@ public static class FilterEvaluator
 
     private static Result<ConstantExpression> CreateConstantExpression(QueryExpression literal, Expression expression)
     {
+        if (IsEnumOrNullableEnum(expression.Type))
+        {
+            if (literal is StringLiteral enumString)
+            {
+                return CreateEnumConstantFromString(enumString.Value, expression.Type);
+            }
+            if (literal is IntegerLiteral enumInt)
+            {
+                return CreateEnumConstantFromInteger(enumInt.Value, expression.Type);
+            }
+            if (literal is EnumSymbolLiteral enumSymbol)
+            {
+                return CreateEnumConstantFromString(enumSymbol.Value, expression.Type);
+            }
+        }
+
         return literal switch
         {
             IntegerLiteral intLit => CreateIntegerConstant(intLit.Value, expression),
@@ -236,6 +252,7 @@ public static class FilterEvaluator
             DateTimeLiteral dtLit => Result.Ok(Expression.Constant(dtLit.Value, expression.Type)),
             BooleanLiteral boolLit => Result.Ok(Expression.Constant(boolLit.Value, expression.Type)),
             NullLiteral _ => Result.Ok(Expression.Constant(null, expression.Type)),
+            EnumSymbolLiteral enumSym => Result.Fail("Unquoted identifiers are only allowed for enum values"),
             _ => Result.Fail($"Unsupported literal type: {literal.GetType().Name}")
         };
     }
@@ -563,6 +580,11 @@ public static class FilterEvaluator
     {
         try
         {
+            if (IsEnumOrNullableEnum(targetType))
+            {
+                return CreateEnumConstantFromInteger(value, targetType);
+            }
+
             // Fetch the underlying type if it's nullable.
             var underlyingType = Nullable.GetUnderlyingType(targetType);
             var type = underlyingType ?? targetType;
@@ -589,6 +611,60 @@ public static class FilterEvaluator
         catch (Exception ex)
         {
             return Result.Fail($"Error converting {value} to {targetType.Name}: {ex.Message}");
+        }
+    }
+
+    private static bool IsEnumOrNullableEnum(Type type)
+    {
+        var underlying = Nullable.GetUnderlyingType(type) ?? type;
+        return underlying.IsEnum;
+    }
+
+    private static Result<ConstantExpression> CreateEnumConstantFromString(string value, Type targetType)
+    {
+        var isNullable = Nullable.GetUnderlyingType(targetType) != null;
+        var enumType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        try
+        {
+            var enumValue = Enum.Parse(enumType, value, ignoreCase: true);
+
+            if (isNullable)
+            {
+                var nullableType = typeof(Nullable<>).MakeGenericType(enumType);
+                var boxedNullable = Activator.CreateInstance(nullableType, enumValue);
+                return Expression.Constant(boxedNullable, targetType);
+            }
+
+            return Expression.Constant(enumValue, targetType);
+        }
+        catch (ArgumentException)
+        {
+            return Result.Fail($"'{value}' is not a valid value for enum type {enumType.Name}");
+        }
+    }
+
+    private static Result<ConstantExpression> CreateEnumConstantFromInteger(int intValue, Type targetType)
+    {
+        var isNullable = Nullable.GetUnderlyingType(targetType) != null;
+        var enumType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        try
+        {
+            var enumValue = Enum.ToObject(enumType, intValue);
+
+            if (isNullable)
+            {
+                var nullableType = typeof(Nullable<>).MakeGenericType(enumType);
+                var boxedNullable = Activator.CreateInstance(nullableType, enumValue);
+                return Expression.Constant(boxedNullable, targetType);
+            }
+
+            return Expression.Constant(enumValue, targetType);
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Error converting integer {intValue} to enum type {enumType.Name}: {ex.Message}");
         }
     }
 }

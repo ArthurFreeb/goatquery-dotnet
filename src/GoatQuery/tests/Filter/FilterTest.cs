@@ -497,6 +497,119 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
             "tags/all(x: x eq 'premium')",
             new[] { TestData.Users["Egg"] }
         };
+
+        // Status enum tests
+        yield return new object[] {
+            "status eq 'Active'",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "status eq 'Inactive'",
+            new[] { TestData.Users["Jane"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status eq 'Suspended'",
+            new[] { TestData.Users["Harry"] }
+        };
+
+        yield return new object[] {
+            "status ne 'Active'",
+            new[] { TestData.Users["Jane"], TestData.Users["Harry"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status ne 'Inactive'",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "status ne 'Suspended'",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"], TestData.Users["NullUser"] }
+        };
+
+        // Status combined with other properties
+        yield return new object[] {
+            "status eq 'Active' and age eq 1",
+            new[] { TestData.Users["Apple"], TestData.Users["Doe"] }
+        };
+
+        yield return new object[] {
+            "status eq 'Inactive' or age eq 33",
+            new[] { TestData.Users["Jane"], TestData.Users["Egg"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status eq 'Active' and isEmailVerified eq true",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Doe"] }
+        };
+
+        yield return new object[] {
+            "status ne 'Active' and age lt 10",
+            new[] { TestData.Users["Jane"], TestData.Users["Harry"], TestData.Users["NullUser"] }
+        };
+
+        // Manager status tests
+        yield return new object[] {
+            "manager/status eq 'Active'",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "manager ne null and manager/status eq 'Active'",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "status eq Active",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "status eq Inactive",
+            new[] { TestData.Users["Jane"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status eq Suspended",
+            new[] { TestData.Users["Harry"] }
+        };
+
+        yield return new object[] {
+            "status ne Active",
+            new[] { TestData.Users["Jane"], TestData.Users["Harry"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status ne Inactive",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "status ne Suspended",
+            new[] { TestData.Users["John"], TestData.Users["Jane"], TestData.Users["Apple"], TestData.Users["Doe"], TestData.Users["Egg"], TestData.Users["NullUser"] }
+        };
+
+        yield return new object[] {
+            "status eq Active and age eq 1",
+            new[] { TestData.Users["Apple"], TestData.Users["Doe"] }
+        };
+
+        yield return new object[] {
+            "status eq Active and isEmailVerified eq true",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Doe"] }
+        };
+
+        yield return new object[] {
+            "manager/status eq Active",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
+
+        yield return new object[] {
+            "manager ne null and manager/status eq Active",
+            new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Egg"] }
+        };
     }
 
     [Theory]
@@ -521,6 +634,7 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
     [InlineData("addresses/any(addr: addr/nonExistentProperty eq 'test')")]
     [InlineData("addresses/invalid(addr: addr/city/name eq 'test')")]
     [InlineData("nonExistentCollection/any(item: item eq 'test')")]
+    [InlineData("firstname eq John")] // Unquoted RHS on non-enum should error
     public void Test_InvalidFilterReturnsError(string filter)
     {
         var query = new Query

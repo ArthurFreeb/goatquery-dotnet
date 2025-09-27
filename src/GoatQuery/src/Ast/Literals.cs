@@ -96,3 +96,13 @@ public sealed class BooleanLiteral : QueryExpression
         Value = value;
     }
 }
+
+public sealed class EnumSymbolLiteral : QueryExpression
+{
+    public string Value { get; set; }
+
+    public EnumSymbolLiteral(Token token, string value) : base(token)
+    {
+        Value = value;
+    }
+}
