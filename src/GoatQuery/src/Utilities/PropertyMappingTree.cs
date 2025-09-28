@@ -23,7 +23,30 @@ public sealed class PropertyMappingTree
             return false;
         }
 
-        return ((Dictionary<string, PropertyMappingNode>)Properties).TryGetValue(jsonPropertyName, out node);
+        if (((Dictionary<string, PropertyMappingNode>)Properties).TryGetValue(jsonPropertyName, out node))
+        {
+            return true;
+        }
+
+        if (jsonPropertyName.EndsWith("Id", StringComparison.OrdinalIgnoreCase) && SourceType != null)
+        {
+            var typeName = SourceType.Name;
+            var expectedAlias = typeName + "Id";
+            if (jsonPropertyName.Equals(expectedAlias, StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var kvp in (Dictionary<string, PropertyMappingNode>)Properties)
+                {
+                    if (string.Equals(kvp.Value.ActualPropertyName, "Id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        node = kvp.Value;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        node = null;
+        return false;
     }
 
     internal void AddProperty(string jsonPropertyName, PropertyMappingNode node)

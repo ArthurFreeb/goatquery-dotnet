@@ -102,6 +102,11 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
         };
 
         yield return new object[] {
+            "userid eq e4c7772b-8947-4e46-98ed-644b417d2a08 or id eq 01998fda-e310-793c-bd8d-f6a92f87b31b",
+            new[] { TestData.Users["Jane"], TestData.Users["Harry"] }
+        };
+
+        yield return new object[] {
             "age lt 3",
             new[] { TestData.Users["John"], TestData.Users["Apple"], TestData.Users["Harry"], TestData.Users["Doe"] }
         };

@@ -1,5 +1,16 @@
 public static class TestData
 {
+    private static readonly User Manager01 = new User
+    {
+        Id = Guid.Parse("671e6bac-b6de-4cc7-b3e9-1a6ac4546b43"),
+        Age = 16,
+        Firstname = "Manager 01",
+        DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
+        BalanceDecimal = 2.00m,
+        IsEmailVerified = false,
+        Status = Status.Active
+    };
+
     public static readonly Dictionary<string, User> Users = new Dictionary<string, User>
     {
         ["John"] = new User
@@ -23,18 +34,11 @@ public static class TestData
                     City = new City { Name = "Boston", Country = "USA" }
                 }
             },
-            Manager = new User
-            {
-                Age = 16,
-                Firstname = "Manager 01",
-                DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
-                BalanceDecimal = 2.00m,
-                IsEmailVerified = false,
-                Status = Status.Active
-            }
+            Manager = Manager01
         },
         ["Jane"] = new User
         {
+            Id = Guid.Parse("01998fda-e310-793c-bd8d-f6a92f87b31b"),
             Age = 9,
             Firstname = "Jane",
             DateOfBirth = DateTime.Parse("2020-05-09 15:30:00").ToUniversalTime(),
@@ -76,19 +80,12 @@ public static class TestData
                     City = new City { Name = "New York", Country = "USA" }
                 }
             },
-            Manager = new User
-            {
-                Age = 16,
-                Firstname = "Manager 01",
-                DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
-                BalanceDecimal = 2.00m,
-                IsEmailVerified = true,
-                Status = Status.Active
-            },
+            Manager = Manager01,
             Tags = ["vip", "premium"]
         },
         ["Harry"] = new User
         {
+            Id = Guid.Parse("e4c7772b-8947-4e46-98ed-644b417d2a08"),
             Age = 1,
             Firstname = "Harry",
             DateOfBirth = DateTime.Parse("2002-08-01").ToUniversalTime(),
