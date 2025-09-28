@@ -167,7 +167,6 @@ public static class FilterEvaluator
                 return Result.Fail($"Invalid property '{segment}' in lambda expression property path");
 
             current = Expression.Property(current, propertyNode.ActualPropertyName);
-            if (!isLast)
             if (i < propertyPath.Segments.Count - 1)
             {
                 if (!propertyNode.HasNestedMapping)
