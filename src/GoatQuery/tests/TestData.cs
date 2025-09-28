@@ -1,5 +1,15 @@
 public static class TestData
 {
+    private static readonly User Manager01 = new User
+    {
+        Id = Guid.Parse("671e6bac-b6de-4cc7-b3e9-1a6ac4546b43"),
+        Age = 16,
+        Firstname = "Manager 01",
+        DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
+        BalanceDecimal = 2.00m,
+        IsEmailVerified = false,
+    };
+
     public static readonly Dictionary<string, User> Users = new Dictionary<string, User>
     {
         ["John"] = new User
@@ -22,22 +32,16 @@ public static class TestData
                     City = new City { Name = "Boston", Country = "USA" }
                 }
             },
-            Manager = new User
-            {
-                Age = 16,
-                Firstname = "Manager 01",
-                DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
-                BalanceDecimal = 2.00m,
-                IsEmailVerified = false
-            }
+            Manager = Manager01
         },
         ["Jane"] = new User
         {
+            Id = Guid.Parse("01998fda-e310-793c-bd8d-f6a92f87b31b"),
             Age = 9,
             Firstname = "Jane",
             DateOfBirth = DateTime.Parse("2020-05-09 15:30:00").ToUniversalTime(),
             BalanceDecimal = 0,
-            IsEmailVerified = false,
+IsEmailVerified = false,
             Addresses = new[]
             {
                 new Address
@@ -58,7 +62,7 @@ public static class TestData
             Firstname = "Apple",
             DateOfBirth = DateTime.Parse("1980-12-31 00:00:01").ToUniversalTime(),
             BalanceFloat = 1204050.98f,
-            IsEmailVerified = true,
+IsEmailVerified = true,
             Addresses = new[]
             {
                 new Address
@@ -72,23 +76,17 @@ public static class TestData
                     City = new City { Name = "New York", Country = "USA" }
                 }
             },
-            Manager = new User
-            {
-                Age = 16,
-                Firstname = "Manager 01",
-                DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
-                BalanceDecimal = 2.00m,
-                IsEmailVerified = true
-            },
+            Manager = Manager01,
             Tags = ["vip", "premium"]
         },
         ["Harry"] = new User
         {
+            Id = Guid.Parse("e4c7772b-8947-4e46-98ed-644b417d2a08"),
             Age = 1,
             Firstname = "Harry",
             DateOfBirth = DateTime.Parse("2002-08-01").ToUniversalTime(),
             BalanceDecimal = 0.5372958205929493m,
-            IsEmailVerified = false,
+IsEmailVerified = false,
             Addresses = Array.Empty<Address>()
         },
         ["Doe"] = new User
@@ -97,7 +95,7 @@ public static class TestData
             Firstname = "Doe",
             DateOfBirth = DateTime.Parse("2023-07-26 12:00:30").ToUniversalTime(),
             BalanceDecimal = null,
-            IsEmailVerified = true,
+IsEmailVerified = true,
             Addresses = new[]
             {
                 new Address
@@ -113,7 +111,7 @@ public static class TestData
             Firstname = "Egg",
             DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
             BalanceDouble = 1334534453453433.33435443343231235652d,
-            IsEmailVerified = false,
+IsEmailVerified = false,
             Addresses = new[]
             {
                 new Address
@@ -133,7 +131,7 @@ public static class TestData
                 Firstname = "Manager 02",
                 DateOfBirth = DateTime.Parse("1999-04-21 00:00:00").ToUniversalTime(),
                 BalanceDecimal = 19.00m,
-                IsEmailVerified = true,
+IsEmailVerified = true,
                 Manager = new User
                 {
                     Age = 30,
@@ -147,7 +145,7 @@ public static class TestData
                         Firstname = "Manager 04",
                         DateOfBirth = DateTime.Parse("1983-04-21 00:00:00").ToUniversalTime(),
                         BalanceDecimal = 39.00m,
-                        IsEmailVerified = true
+IsEmailVerified = true,
                     },
                     Company = new Company
                     {
@@ -166,7 +164,7 @@ public static class TestData
             BalanceDecimal = null,
             BalanceDouble = null,
             BalanceFloat = null,
-            IsEmailVerified = true,
+IsEmailVerified = true,
             Addresses = Array.Empty<Address>()
         },
     };
