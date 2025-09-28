@@ -41,7 +41,7 @@ public static class TestData
             Firstname = "Jane",
             DateOfBirth = DateTime.Parse("2020-05-09 15:30:00").ToUniversalTime(),
             BalanceDecimal = 0,
-IsEmailVerified = false,
+            IsEmailVerified = false,
             Addresses = new[]
             {
                 new Address
@@ -62,7 +62,7 @@ IsEmailVerified = false,
             Firstname = "Apple",
             DateOfBirth = DateTime.Parse("1980-12-31 00:00:01").ToUniversalTime(),
             BalanceFloat = 1204050.98f,
-IsEmailVerified = true,
+            IsEmailVerified = true,
             Addresses = new[]
             {
                 new Address
@@ -86,7 +86,7 @@ IsEmailVerified = true,
             Firstname = "Harry",
             DateOfBirth = DateTime.Parse("2002-08-01").ToUniversalTime(),
             BalanceDecimal = 0.5372958205929493m,
-IsEmailVerified = false,
+            IsEmailVerified = false,
             Addresses = Array.Empty<Address>()
         },
         ["Doe"] = new User
@@ -95,7 +95,7 @@ IsEmailVerified = false,
             Firstname = "Doe",
             DateOfBirth = DateTime.Parse("2023-07-26 12:00:30").ToUniversalTime(),
             BalanceDecimal = null,
-IsEmailVerified = true,
+            IsEmailVerified = true,
             Addresses = new[]
             {
                 new Address
@@ -111,7 +111,7 @@ IsEmailVerified = true,
             Firstname = "Egg",
             DateOfBirth = DateTime.Parse("2000-01-01 00:00:00").ToUniversalTime(),
             BalanceDouble = 1334534453453433.33435443343231235652d,
-IsEmailVerified = false,
+            IsEmailVerified = false,
             Addresses = new[]
             {
                 new Address
@@ -131,7 +131,7 @@ IsEmailVerified = false,
                 Firstname = "Manager 02",
                 DateOfBirth = DateTime.Parse("1999-04-21 00:00:00").ToUniversalTime(),
                 BalanceDecimal = 19.00m,
-IsEmailVerified = true,
+                IsEmailVerified = true,
                 Manager = new User
                 {
                     Age = 30,
@@ -145,7 +145,7 @@ IsEmailVerified = true,
                         Firstname = "Manager 04",
                         DateOfBirth = DateTime.Parse("1983-04-21 00:00:00").ToUniversalTime(),
                         BalanceDecimal = 39.00m,
-IsEmailVerified = true,
+                        IsEmailVerified = true,
                     },
                     Company = new Company
                     {
@@ -164,7 +164,7 @@ IsEmailVerified = true,
             BalanceDecimal = null,
             BalanceDouble = null,
             BalanceFloat = null,
-IsEmailVerified = true,
+            IsEmailVerified = true,
             Addresses = Array.Empty<Address>()
         },
     };
