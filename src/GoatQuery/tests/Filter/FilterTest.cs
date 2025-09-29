@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
@@ -391,7 +392,6 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
             new[] { TestData.Users["Egg"] }
         };
 
-        // Lambda expression tests with addresses/any
         yield return new object[] {
             "addresses/any(addr: addr/city/name eq 'New York')",
             new[] { TestData.Users["John"], TestData.Users["Apple"] }
@@ -621,7 +621,10 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
             Filter = filter
         };
 
-        var result = TestData.Users.Values.AsQueryable().Apply(query);
+        var result = _fixture.DbContext.Users.Apply(query);
+
+        Console.WriteLine("------------------------------------------ QUERY ------------------------------------------");
+        Console.WriteLine(result.Value.Query.ToQueryString());
 
         Assert.Equal(expected, result.Value.Query);
     }
@@ -642,7 +645,7 @@ public sealed class FilterTest : IClassFixture<DatabaseTestFixture>
             Filter = filter
         };
 
-        var result = TestData.Users.Values.AsQueryable().Apply(query);
+        var result = _fixture.DbContext.Users.Apply(query);
 
         Assert.True(result.IsFailed);
     }
