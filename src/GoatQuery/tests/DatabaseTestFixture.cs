@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -25,6 +27,17 @@ public class DatabaseTestFixture : IAsyncLifetime
         var connectionString = _postgresContainer.GetConnectionString();
         var optionsBuilder = new DbContextOptionsBuilder<TestDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
+
+        // Enable EF Core logging
+        optionsBuilder.LogTo(
+            Console.WriteLine,
+            new[] { DbLoggerCategory.Database.Command.Name, DbLoggerCategory.Query.Name },
+            LogLevel.Information,
+            DbContextLoggerOptions.DefaultWithLocalTime | DbContextLoggerOptions.SingleLine
+        );
+
+        optionsBuilder.EnableSensitiveDataLogging();
+        optionsBuilder.EnableDetailedErrors();
 
         _dbContext = new TestDbContext(optionsBuilder.Options);
 
